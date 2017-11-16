@@ -11,7 +11,7 @@ EPOCHS = 500
 BATCH_SIZE = 128
 LEARNING_RATE = 0.002
 INPUT_SHAPE = (32, 32, 1)
-WEIGHTS = 'unet.hdf5'
+WEIGHTS = 'model1.hdf5'
 
 data = load_data()
 Y_channel = data[:, 0, :].reshape(50000, 32, 32, 1)
