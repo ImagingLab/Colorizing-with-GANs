@@ -6,6 +6,7 @@ Created on Wed Nov 15 19:34:06 2017
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def rgb2yuv(data):
@@ -61,3 +62,20 @@ def yuv2rgb(data):
 
     RGB = np.hstack((R, G, B))
     return RGB
+
+
+def show_yuv(yuv_original, yuv_pred):
+    rgb_original = np.round(yuv2rgb(yuv_original))
+    rgb_pred = np.round(yuv2rgb(yuv_pred))
+    fig = plt.figure()
+    print(rgb_original.shape)
+    fig.add_subplot(1, 3, 1).set_title('grayscale')
+    plt.imshow(yuv_original[0], cmap='gray')
+
+    fig.add_subplot(1, 3, 2).set_title('original')
+    plt.imshow(rgb_original)
+
+    fig.add_subplot(1, 3, 3).set_title('colorized')
+    plt.imshow(rgb_pred)
+
+    plt.show()
