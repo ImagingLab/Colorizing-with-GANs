@@ -6,8 +6,6 @@ Created on Wed Nov 15 21:17:10 2017
 """
 
 import numpy as np
-from utils import rgb2yuv
-
 
 def unpickle(file):
     import pickle
@@ -36,6 +34,4 @@ def read_data(directory):
 
 def load_data():
     names, data, labels = read_data('../../../datasets/cfar10/')
-    data_YUV = rgb2yuv(data)
-    return data_YUV
-
+    return data
