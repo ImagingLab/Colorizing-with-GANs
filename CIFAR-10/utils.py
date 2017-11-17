@@ -9,15 +9,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage import color
 
-def preproc(data):
+def preproc(data, normalize = 0):
     n = data.shape[0]
     m = int(data.shape[1] / 3)
 
-    data = np.dstack((data[:, :m], data[:, m:2 * m], data[:, 2 * m:]))
-    data = data.reshape((n, int(np.sqrt(m)), int(np.sqrt(m)), 3))
+    if normalize == 1:
+        image_mean = np.mean(data)
+        mean_mat = image_mean * np.ones(data.shape)
+        data = (data - mean_mat) / 255
 
-    data_YUV = color.rgb2yuv(data)
-    return data_YUV, data
+    data_RGB = np.dstack((data[:, :m], data[:, m:2 * m], data[:, 2 * m:]))
+    data_RGB = data_RGB.reshape((n, int(np.sqrt(m)), int(np.sqrt(m)), 3))
+
+    data_YUV = color.rgb2yuv(data_RGB)
+    return data_YUV, data_RGB # returns YUV as 4D tensor and RGB as 4D tensor
 
 def show_yuv(yuv_original, yuv_pred):
     rgb_original = np.round(color.yuv2rgb(yuv_original))
