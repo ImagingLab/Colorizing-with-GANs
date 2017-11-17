@@ -6,6 +6,8 @@ Created on Wed Nov 15 21:17:10 2017
 """
 
 import numpy as np
+from utils import preproc
+
 
 def unpickle(file):
     import pickle
@@ -34,4 +36,6 @@ def read_data(directory):
 
 def load_data():
     names, data, labels = read_data('../../../datasets/cfar10/')
-    return data
+    np.random.shuffle(data)
+    yuv, _ = preproc(data)
+    return yuv
