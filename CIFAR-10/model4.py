@@ -1,37 +1,50 @@
+import os
 import numpy as np
+import keras.backend as K
 
-from keras.layers import Input
 from keras import layers
-from keras.layers import Dense
+from keras import metrics
+from keras.layers import Input
 from keras.layers import Activation
-from keras.layers import Flatten
 from keras.layers import Conv2D
 from keras.layers import MaxPooling2D
-from keras.layers import GlobalMaxPooling2D
 from keras.layers import ZeroPadding2D
-from keras.layers import AveragePooling2D
-from keras.layers import GlobalAveragePooling2D
 from keras.layers import BatchNormalization
 from keras.layers import UpSampling2D
 from keras.models import Model
-from keras.preprocessing import image
-import keras.backend as K
-
+from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
+from dataset import *
+from utils import *
 
 EPOCHS = 500
-BATCH_SIZE = 256
-LEARNING_RATE = 0.002
+BATCH_SIZE = 128
+LEARNING_RATE = 0.001
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model4.hdf5'
 MODE = 1  # 1: train - 2: test
 
 data = load_data()
-np.random.shuffle(data)
-Y_channel = data[:, 0, :].reshape(50000, 32, 32, 1)
-UV_channel = data[:, 1:, :].reshape(50000, 32, 32, 2)
+Y_channel = data[:, :, :, :1]
+UV_channel = data[:, :, :, 1:]
 
-def exact_acc(y_true, y_pred):
-    return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
+
+def eacc(y_true, y_pred):
+    return K.mean(K.equal(K.round(y_true * 255), K.round(y_pred * 255)))
+
+
+def mse(y_true, y_pred):
+    return K.mean(K.square(y_pred * 255 - y_true * 255), axis=-1)
+
+
+def mae(y_true, y_pred):
+    return K.mean(K.abs(y_pred * 255 - y_true * 255), axis=-1)
+
+
+def learning_scheduler(epoch):
+    lr = LEARNING_RATE / (2 ** (epoch // 50))
+    print('\nlearning rate: ' + str(lr) + '\n')
+    return  lr
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
@@ -115,7 +128,6 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(1, 1))
 
 
 def ResNet50():
-
     img_input = Input(shape=INPUT_SHAPE)
 
     if K.image_data_format() == 'channels_last':
@@ -129,7 +141,7 @@ def ResNet50():
     x = Activation('relu')(x)
     x = ZeroPadding2D((1, 1))(x)
     x = MaxPooling2D((3, 3), strides=(2, 2))(x)
-    
+
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a')
     x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
     x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
@@ -149,11 +161,15 @@ def ResNet50():
     x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
-    
+
     x = UpSampling2D((4, 4))(x)
     x = Conv2D(2, (1, 1), name='conv6')(x)
 
     model = Model(img_input, x, name='resnet50')
+
+    model.compile(optimizer=Adam(LEARNING_RATE),
+                  loss='mean_squared_error',
+                  metrics=['accuracy', eacc, mse, mae])
 
     return model
 
@@ -172,6 +188,8 @@ if MODE == 1:
         factor=0.5,
         patience=10)
 
+    scheduler = LearningRateScheduler(learning_scheduler)
+
     if os.path.exists(WEIGHTS):
         model.load_weights(WEIGHTS)
 
@@ -182,12 +200,13 @@ if MODE == 1:
         epochs=EPOCHS,
         verbose=1,
         validation_split=0.1,
-        callbacks=[model_checkpoint, reduce_lr])
+        callbacks=[model_checkpoint, scheduler])
 
 elif MODE == 2:
     for i in range(45000, 50000):
-        y = Y_channel[i].T
-        yuv_original = np.r_[(y, UV_channel[i].T[:1], UV_channel[i].T[1:])]
+        y = Y_channel[i]
+        yuv_original = np.r_[(y.T, UV_channel[i][:, :, :1].T, UV_channel[i][:, :, 1:].T)].T
         uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
-        yuv_pred = np.r_[(y, uv_pred.T[:1], uv_pred.T[1:])]
+        yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
+
         show_yuv(yuv_original, yuv_pred)
