@@ -10,11 +10,11 @@ from dataset import *
 from utils import *
 
 EPOCHS = 500
-BATCH_SIZE = 128
-LEARNING_RATE = 0.0001
+BATCH_SIZE = 256
+LEARNING_RATE = 0.002
 INPUT_SHAPE = (32, 32, 1)
-WEIGHTS = 'model2.hdf5'
-MODE = 1  # 1: train - 2: test
+WEIGHTS = 'model3.hdf5'
+MODE = 2  # 1: train - 2: test
 
 data = load_data()
 np.random.shuffle(data)
@@ -52,22 +52,22 @@ def create_model():
 
     conv3 = create_conv(256, (3, 3), pool2, 'conv3_1', activation='leakyrelu')
     conv3 = create_conv(256, (3, 3), conv3, 'conv3_2', activation='leakyrelu')
-    pool3 = MaxPool2D((2, 2))(conv3)
+    #pool3 = MaxPool2D((2, 2))(conv3)
 
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4_1', activation='leakyrelu')
+    conv4 = create_conv(512, (3, 3), conv3, 'conv4_1', activation='leakyrelu')
     conv4 = create_conv(512, (3, 3), conv4, 'conv4_2', activation='leakyrelu')
-    pool4 = MaxPool2D((2, 2))(conv4)
+    #pool4 = MaxPool2D((2, 2))(conv4)
 
-    conv5 = create_conv(1024, (3, 3), pool4, 'conv5_1', activation='leakyrelu')
+    conv5 = create_conv(1024, (3, 3), conv4, 'conv5_1', activation='leakyrelu')
     conv5 = create_conv(1024, (3, 3), conv5, 'conv5_2', activation='leakyrelu')
 
-    up6 = create_conv(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6', activation='relu')
-    merge6 = concatenate([conv4, up6], axis=3)
+    #up6 = create_conv(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6', activation='relu')
+    merge6 = concatenate([conv4, conv5], axis=3)
     conv6 = create_conv(512, (3, 3), merge6, 'conv6_1', activation='relu')
     conv6 = create_conv(512, (3, 3), conv6, 'conv6_2', activation='relu')
 
-    up7 = create_conv(256, (2, 2), UpSampling2D((2, 2))(conv6), 'up7', activation='relu')
-    merge7 = concatenate([conv3, up7], axis=3)
+    #up7 = create_conv(256, (2, 2), UpSampling2D((2, 2))(conv6), 'up7', activation='relu')
+    merge7 = concatenate([conv3, conv6], axis=3)
     conv7 = create_conv(256, (3, 3), merge7, 'conv7_1', activation='relu')
     conv7 = create_conv(256, (3, 3), conv7, 'conv7_2', activation='relu')
 
@@ -85,7 +85,7 @@ def create_model():
     model = Model(inputs=inputs, outputs=conv9)
     model.compile(optimizer=Adam(LEARNING_RATE),
                   loss='mean_squared_error',
-                  metrics=['accuracy', exact_acc, metrics.mse, metrics.mae])
+                  metrics=['accuracy', exact_acc, metrics.mae])
 
     return model
 
