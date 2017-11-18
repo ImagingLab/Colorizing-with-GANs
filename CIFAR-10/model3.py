@@ -18,7 +18,7 @@ MODE = 1  # 1: train - 2: test
 
 data_yuv, data_rgb, data_grey = load_data()
 Y_channel = data_yuv[:, :, :, :1]
-UV_channel = data_yuv[:, :, :, 1:]
+UV_channel = data_yuv[:, :, :, 1:] * 255
 
 
 def eacc(y_true, y_pred):
@@ -105,6 +105,9 @@ def create_model():
 
 model = create_model()
 
+if os.path.exists(WEIGHTS):
+    model.load_weights(WEIGHTS)
+
 if MODE == 1:
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
@@ -116,9 +119,6 @@ if MODE == 1:
         monitor='loss',
         factor=0.5,
         patience=10)
-
-    if os.path.exists(WEIGHTS):
-        model.load_weights(WEIGHTS)
 
     scheduler = LearningRateScheduler(learning_scheduler)
 
@@ -134,8 +134,8 @@ if MODE == 1:
 elif MODE == 2:
     for i in range(45000, 50000):
         y = Y_channel[i]
-        yuv_original = np.r_[(y.T, UV_channel[i][:, :, :1].T, UV_channel[i][:, :, 1:].T)].T
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
+        uv = UV_channel / 255
+        uv_pred = np.array(model.predict(y[None, :, :, :]))[0] / 255
+        yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
         yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
-
         show_yuv(yuv_original, yuv_pred)

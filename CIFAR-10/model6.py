@@ -10,17 +10,16 @@ from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSam
 from dataset import *
 from utils import *
 
-EPOCHS = 1000
-BATCH_SIZE = 2
+EPOCHS = 500
+BATCH_SIZE = 256
 LEARNING_RATE = 0.0001
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model6.hdf5'
-MODE = 1  # 1: train - 2: test
+MODE = 2  # 1: train - 2: test
 
-data_yuv, data_rgb, data_grey = load_data(shuffle=False, count=2)
+data_yuv, data_rgb, data_grey = load_data(shuffle=False, count=256)
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:] * 1000
-
 
 
 def eacc(y_true, y_pred):
@@ -36,7 +35,7 @@ def mae(y_true, y_pred):
 
 
 def learning_scheduler(epoch):
-    lr = LEARNING_RATE / (2 ** (epoch // 200))
+    lr = LEARNING_RATE / (2 ** (epoch // 50))
     print('\nlearning rate: ' + str(lr) + '\n')
     return lr
 
@@ -107,6 +106,9 @@ def create_model():
 
 model = create_model()
 
+if os.path.exists(WEIGHTS):
+    model.load_weights(WEIGHTS)
+
 if MODE == 1:
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
@@ -118,9 +120,6 @@ if MODE == 1:
         monitor='loss',
         factor=0.5,
         patience=10)
-
-    if os.path.exists(WEIGHTS):
-        model.load_weights(WEIGHTS)
 
     scheduler = LearningRateScheduler(learning_scheduler)
 
@@ -139,11 +138,7 @@ elif MODE == 2:
     for i in range(0, 1000):
         y = Y_channel[i]
         uv = UV_channel / 1000
-
-        print(model.predict(Y_channel[i][None, :, :, :])[0][0])
-        print(UV_channel[i][0])
-
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0] / 1000
+        uv_pred = np.array(model.predict(y[None, :, :, :]))[0] / 1000
         yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
         yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
         show_yuv(yuv_original, yuv_pred)

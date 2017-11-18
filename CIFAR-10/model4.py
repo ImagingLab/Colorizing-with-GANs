@@ -176,6 +176,9 @@ def ResNet50():
 
 model = ResNet50()
 
+if os.path.exists(WEIGHTS):
+    model.load_weights(WEIGHTS)
+
 if MODE == 1:
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
@@ -189,9 +192,6 @@ if MODE == 1:
         patience=10)
 
     scheduler = LearningRateScheduler(learning_scheduler)
-
-    if os.path.exists(WEIGHTS):
-        model.load_weights(WEIGHTS)
 
     model.fit(
         Y_channel,

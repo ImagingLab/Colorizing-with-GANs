@@ -105,6 +105,9 @@ def create_model():
 
 model = create_model()
 
+if os.path.exists(WEIGHTS):
+    model.load_weights(WEIGHTS)
+
 if MODE == 1:
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
@@ -119,8 +122,6 @@ if MODE == 1:
 
     scheduler = LearningRateScheduler(learning_scheduler)
 
-    if os.path.exists(WEIGHTS):
-        model.load_weights(WEIGHTS)
 
     model.fit(
         data_grey,

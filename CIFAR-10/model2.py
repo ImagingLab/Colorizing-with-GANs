@@ -92,6 +92,9 @@ def create_model():
 
 model = create_model()
 
+if os.path.exists(WEIGHTS):
+    model.load_weights(WEIGHTS)
+    
 if MODE == 1:
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
@@ -103,9 +106,6 @@ if MODE == 1:
         monitor='loss',
         factor=0.5,
         patience=10)
-
-    if os.path.exists(WEIGHTS):
-        model.load_weights(WEIGHTS)
 
     model.fit(
         Y_channel,
