@@ -5,20 +5,22 @@ from keras import metrics
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
-from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, LeakyReLU, Conv2D
+from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, add, LeakyReLU, \
+    Conv2D
 from dataset import *
 from utils import *
 
-EPOCHS = 10000
-BATCH_SIZE = 256
-LEARNING_RATE = 0.002
+EPOCHS = 1000
+BATCH_SIZE = 2
+LEARNING_RATE = 0.0001
 INPUT_SHAPE = (32, 32, 1)
-WEIGHTS = 'model3.hdf5'
+WEIGHTS = 'model6.hdf5'
 MODE = 1  # 1: train - 2: test
 
-data_yuv, data_rgb, data_grey = load_data()
+data_yuv, data_rgb, data_grey = load_data(shuffle=False, count=2)
 Y_channel = data_yuv[:, :, :, :1]
-UV_channel = data_yuv[:, :, :, 1:]
+UV_channel = data_yuv[:, :, :, 1:] * 1000
+
 
 
 def eacc(y_true, y_pred):
@@ -34,7 +36,7 @@ def mae(y_true, y_pred):
 
 
 def learning_scheduler(epoch):
-    lr = LEARNING_RATE / (2 ** (epoch // 100))
+    lr = LEARNING_RATE / (2 ** (epoch // 200))
     print('\nlearning rate: ' + str(lr) + '\n')
     return lr
 
@@ -128,14 +130,20 @@ if MODE == 1:
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
-        validation_split=0.1,
-        callbacks=[model_checkpoint, scheduler])
+        # validation_split=0.1,
+        callbacks=[scheduler])
+
+    model.save_weights(WEIGHTS)
 
 elif MODE == 2:
-    for i in range(45000, 50000):
+    for i in range(0, 1000):
         y = Y_channel[i]
-        yuv_original = np.r_[(y.T, UV_channel[i][:, :, :1].T, UV_channel[i][:, :, 1:].T)].T
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
-        yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
+        uv = UV_channel / 1000
 
+        print(model.predict(Y_channel[i][None, :, :, :])[0][0])
+        print(UV_channel[i][0])
+
+        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0] / 1000
+        yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
+        yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
         show_yuv(yuv_original, yuv_pred)

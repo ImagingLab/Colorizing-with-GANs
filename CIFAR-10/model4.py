@@ -22,11 +22,11 @@ BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model4.hdf5'
-MODE = 1  # 1: train - 2: test
+MODE = 2  # 1: train - 2: test
 
-data = load_data()
-Y_channel = data[:, :, :, :1]
-UV_channel = data[:, :, :, 1:]
+data_yuv, data_rgb, data_grey = load_data()
+Y_channel = data_yuv[:, :, :, :1]
+UV_channel = data_yuv[:, :, :, 1:]
 
 
 def eacc(y_true, y_pred):

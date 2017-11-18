@@ -34,8 +34,13 @@ def read_data(directory):
     return names, data, labels
 
 
-def load_data():
+def load_data(normalize=False, shuffle=True, count=-1):
     names, data, labels = read_data('../../../datasets/cfar10/')
-    np.random.shuffle(data)
-    yuv, _ = preproc(data)
-    return yuv
+
+    if shuffle:
+        np.random.shuffle(data)
+
+    if count != -1:
+        data = data[:count]
+
+    return preproc(data, normalize)

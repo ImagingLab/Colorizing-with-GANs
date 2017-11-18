@@ -9,32 +9,32 @@ from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSam
 from dataset import *
 from utils import *
 
-EPOCHS = 10000
-BATCH_SIZE = 256
-LEARNING_RATE = 0.002
+EPOCHS = 500
+BATCH_SIZE = 128
+LEARNING_RATE = 0.001
 INPUT_SHAPE = (32, 32, 1)
-WEIGHTS = 'model3.hdf5'
-MODE = 1  # 1: train - 2: test
+WEIGHTS = 'model5.hdf5'
+MODE = 2  # 1: train - 2: test
 
 data_yuv, data_rgb, data_grey = load_data()
-Y_channel = data_yuv[:, :, :, :1]
-UV_channel = data_yuv[:, :, :, 1:]
+data_rgb = data_rgb / 255
+data_grey = data_grey[:, :, :, None]
 
 
 def eacc(y_true, y_pred):
-    return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
+    return K.mean(K.equal(K.round(y_true * 255), K.round(y_pred * 255)))
 
 
 def mse(y_true, y_pred):
-    return K.mean(K.square(y_pred - y_true), axis=-1)
+    return K.mean(K.square(y_pred * 255 - y_true * 255), axis=-1)
 
 
 def mae(y_true, y_pred):
-    return K.mean(K.abs(y_pred - y_true), axis=-1)
+    return K.mean(K.abs(y_pred * 255 - y_true * 255), axis=-1)
 
 
 def learning_scheduler(epoch):
-    lr = LEARNING_RATE / (2 ** (epoch // 100))
+    lr = LEARNING_RATE / (2 ** (epoch // 20))
     print('\nlearning rate: ' + str(lr) + '\n')
     return lr
 
@@ -93,7 +93,7 @@ def create_model():
     merge9 = concatenate([conv1, up9], axis=3)
     conv9 = create_conv(64, (3, 3), merge9, 'conv9_1', activation='relu')
     conv9 = create_conv(64, (3, 3), conv9, 'conv9_2', activation='relu')
-    conv9 = Conv2D(2, (1, 1), padding='same', name='conv9_3')(conv9)
+    conv9 = Conv2D(3, (1, 1), padding='same', name='conv9_3', activation='relu')(conv9)
 
     model = Model(inputs=inputs, outputs=conv9)
     model.compile(optimizer=Adam(LEARNING_RATE),
@@ -117,14 +117,14 @@ if MODE == 1:
         factor=0.5,
         patience=10)
 
+    scheduler = LearningRateScheduler(learning_scheduler)
+
     if os.path.exists(WEIGHTS):
         model.load_weights(WEIGHTS)
 
-    scheduler = LearningRateScheduler(learning_scheduler)
-
     model.fit(
-        Y_channel,
-        UV_channel,
+        data_grey,
+        data_rgb,
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
@@ -133,9 +133,6 @@ if MODE == 1:
 
 elif MODE == 2:
     for i in range(45000, 50000):
-        y = Y_channel[i]
-        yuv_original = np.r_[(y.T, UV_channel[i][:, :, :1].T, UV_channel[i][:, :, 1:].T)].T
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
-        yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
-
-        show_yuv(yuv_original, yuv_pred)
+        rgb_original = data_rgb[i]
+        rgb_pred = np.array(model.predict(data_grey[i:i+1]))[0]
+        show_rgb(rgb_original, rgb_pred)
