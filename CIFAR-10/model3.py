@@ -10,15 +10,20 @@ from dataset import *
 from utils import *
 
 EPOCHS = 10000
-BATCH_SIZE = 256
-LEARNING_RATE = 0.002
+BATCH_SIZE = 128
+LEARNING_RATE = 0.00002
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model3.hdf5'
-MODE = 1  # 1: train - 2: test
+MODE = 1  # 1: train - 2: visualize
 
 data_yuv, data_rgb, data_grey = load_data()
+data_test_yuv, data_test_rgb, data_test_grey = load_test_data()
+
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:] * 255
+
+Y_channel_test = data_test_yuv[:, :, :, :1]
+UV_channel_test = data_test_yuv[:, :, :, 1:] * 255
 
 
 def eacc(y_true, y_pred):
@@ -34,7 +39,7 @@ def mae(y_true, y_pred):
 
 
 def learning_scheduler(epoch):
-    lr = LEARNING_RATE / (2 ** (epoch // 100))
+    lr = LEARNING_RATE / (2 ** (epoch // 50))
     print('\nlearning rate: ' + str(lr) + '\n')
     return lr
 
@@ -128,13 +133,13 @@ if MODE == 1:
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
-        validation_split=0.1,
+        validation_data=(Y_channel_test, UV_channel_test),
         callbacks=[model_checkpoint, scheduler])
 
 elif MODE == 2:
-    for i in range(45000, 50000):
-        y = Y_channel[i]
-        uv = UV_channel / 255
+    for i in range(0, 5000):
+        y = Y_channel_test[i]
+        uv = UV_channel_test / 255
         uv_pred = np.array(model.predict(y[None, :, :, :]))[0] / 255
         yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
         yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T

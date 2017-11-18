@@ -29,8 +29,8 @@ def preproc(data, normalize=False):
 
 
 def show_yuv(yuv_original, yuv_pred):
-    rgb_original = color.yuv2rgb(yuv_original)
-    rgb_pred = np.abs(color.yuv2rgb(yuv_pred))
+    rgb_original = np.clip(color.yuv2rgb(yuv_original), 0, 1)
+    rgb_pred = np.clip(np.abs(color.yuv2rgb(yuv_pred)), 0, 1)
     grey = color.rgb2grey(yuv_original)
 
     fig = plt.figure()
