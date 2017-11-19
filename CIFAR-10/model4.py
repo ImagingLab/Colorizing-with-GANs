@@ -14,6 +14,11 @@ from keras.layers import UpSampling2D
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
+
+import os, sys, inspect
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+
 from dataset import *
 from utils import *
 
@@ -24,8 +29,8 @@ INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model4.hdf5'
 MODE = 1  # 1: train - 2: visualize
 
-data_yuv, data_rgb, data_grey = load_data()
-data_test_yuv, data_test_rgb, data_test_grey = load_test_data()
+data_yuv, data_rgb = load_cifar10_data()
+data_test_yuv, data_test_rgb = load_cfar10_test_data()
 
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:]
@@ -49,7 +54,7 @@ def mae(y_true, y_pred):
 def learning_scheduler(epoch):
     lr = LEARNING_RATE / (2 ** (epoch // 50))
     print('\nlearning rate: ' + str(lr) + '\n')
-    return  lr
+    return lr
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):

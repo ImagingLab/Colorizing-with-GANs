@@ -5,7 +5,11 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
 from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, Dropout
-from dataset import load_data
+import os, sys, inspect
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+
+from dataset import load_cifar10_data
 
 EPOCHS = 500
 BATCH_SIZE = 128
@@ -13,15 +17,16 @@ LEARNING_RATE = 0.002
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model1.hdf5'
 
-data = load_data()
+data = load_cifar10_data()
 Y_channel = data[:, 0, :].reshape(50000, 32, 32, 1)
 UV_channel = data[:, 1:, :].reshape(50000, 32, 32, 2)
 
 
 def Conv2D(filters, kernel_size, inputs, name=None, padding='same', activation='relu'):
     return Activation(activation)(
-        #BatchNormalization()(
-            keras.layers.Conv2D(filters, kernel_size, padding=padding, kernel_initializer='he_normal', name=name)(inputs))
+        # BatchNormalization()(
+        keras.layers.Conv2D(filters, kernel_size, padding=padding, kernel_initializer='he_normal', name=name)(inputs))
+
 
 def create_model():
     inputs = Input(INPUT_SHAPE)
@@ -40,15 +45,15 @@ def create_model():
     conv4 = Conv2D(512, (3, 3), pool3, 'conv4_1')
     conv4 = Conv2D(512, (3, 3), conv4, 'conv4_2')
     drop4 = Dropout(0.5)(conv4)
-    #pool4 = MaxPool2D((2, 2))(conv4)
+    # pool4 = MaxPool2D((2, 2))(conv4)
 
-    #conv5 = Conv2D(1024, (3, 3), pool4, 'conv5_1')
-    #conv5 = Conv2D(1024, (3, 3), conv5, 'conv5_2')
+    # conv5 = Conv2D(1024, (3, 3), pool4, 'conv5_1')
+    # conv5 = Conv2D(1024, (3, 3), conv5, 'conv5_2')
 
-    #up6 = Conv2D(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6')
-    #merge6 = concatenate([conv4, up6], axis=3)
-    #conv6 = Conv2D(512, (3, 3), merge6, 'conv6_1')
-    #conv6 = Conv2D(512, (3, 3), conv6, 'conv6_2')
+    # up6 = Conv2D(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6')
+    # merge6 = concatenate([conv4, up6], axis=3)
+    # conv6 = Conv2D(512, (3, 3), merge6, 'conv6_1')
+    # conv6 = Conv2D(512, (3, 3), conv6, 'conv6_2')
     conv6 = drop4
 
     up7 = Conv2D(256, (2, 2), UpSampling2D((2, 2))(conv6), 'up7')
@@ -74,6 +79,7 @@ def create_model():
 
     return model
 
+
 model = create_model()
 model_checkpoint = ModelCheckpoint(
     filepath=WEIGHTS,
@@ -98,4 +104,3 @@ model.fit(
     verbose=1,
     validation_split=0.1,
     callbacks=[model_checkpoint, reduce_lr])
-

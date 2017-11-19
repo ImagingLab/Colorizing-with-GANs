@@ -10,22 +10,28 @@ import matplotlib.pyplot as plt
 from skimage import color
 
 
-def preproc(data, normalize=False):
-    n = data.shape[0]
-    m = int(data.shape[1] / 3)
+def preproc(data, normalize=False, flip=False, mean_image=None):
+    data_size = data.shape[0]
+    img_size = int(data.shape[1] / 3)
 
     if normalize:
-        image_mean = np.mean(data)
-        mean_mat = image_mean * np.ones(data.shape)
-        data = (data - mean_mat) / 255
+        if mean_image is None:
+            mean_image = np.mean(data)
 
-    data_RGB = np.dstack((data[:, :m], data[:, m:2 * m], data[:, 2 * m:]))
-    data_RGB = data_RGB.reshape((n, int(np.sqrt(m)), int(np.sqrt(m)), 3))
+        mean_image = mean_image / np.float32(255)
+        data = (data - mean_image) / np.float32(255)
+
+    data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
+    data_RGB = data_RGB.reshape((data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
+
+    if flip:
+        data_RGB = data_RGB[0:data_size, :, :, :]
+        data_RGB_flip = data_RGB[:, :, :, ::-1]
+        data_RGB = np.concatenate((data_RGB, data_RGB_flip), axis=0)
 
     data_YUV = color.rgb2yuv(data_RGB)
-    data_grey = color.rgb2grey(data_RGB)
 
-    return data_YUV, data_RGB, data_grey  # returns YUV as 4D tensor and RGB as 4D tensor
+    return data_YUV, data_RGB  # returns YUV as 4D tensor and RGB as 4D tensor
 
 
 def show_yuv(yuv_original, yuv_pred):

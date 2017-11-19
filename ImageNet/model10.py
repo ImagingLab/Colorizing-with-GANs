@@ -13,21 +13,39 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfi
 from dataset import *
 from utils import *
 
-EPOCHS = 500
+EPOCHS = 1000
 BATCH_SIZE = 128
-LEARNING_RATE = 0.0001
-INPUT_SHAPE = (32, 32, 1)
-WEIGHTS = 'model2.hdf5'
-MODE = 1  # 1: train - 2: test
+LEARNING_RATE = 0.001
+INPUT_SHAPE = (64, 64, 1)
+WEIGHTS = 'model10.hdf5'
+MODE = 1  # 1: train - 2: visualize
 
-data = load_cifar10_data()
-np.random.shuffle(data)
-Y_channel = data[:, 0, :].reshape(50000, 32, 32, 1)
-UV_channel = data[:, 1:, :].reshape(50000, 32, 32, 2)
+data_yuv, data_rgb = load_imagenet_data(1, count=1024 * 64)
+data_test_yuv, data_test_rgb = load_imagenet_test_data(count=2048)
+
+Y_channel = data_yuv[:, :, :, :1]
+UV_channel = data_yuv[:, :, :, 1:] * 255
+
+Y_channel_test = data_test_yuv[:, :, :, :1]
+UV_channel_test = data_test_yuv[:, :, :, 1:] * 255
 
 
-def exact_acc(y_true, y_pred):
+def eacc(y_true, y_pred):
     return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
+
+
+def mse(y_true, y_pred):
+    return K.mean(K.square(y_pred - y_true), axis=-1)
+
+
+def mae(y_true, y_pred):
+    return K.mean(K.abs(y_pred - y_true), axis=-1)
+
+
+def learning_scheduler(epoch):
+    lr = LEARNING_RATE / (2 ** (epoch // 20))
+    print('\nlearning rate: ' + str(lr) + '\n')
+    return lr
 
 
 def create_conv(filters, kernel_size, inputs, name=None, bn=True, padding='same', activation='relu'):
@@ -89,7 +107,7 @@ def create_model():
     model = Model(inputs=inputs, outputs=conv9)
     model.compile(optimizer=Adam(LEARNING_RATE),
                   loss='mean_squared_error',
-                  metrics=['accuracy', exact_acc, metrics.mse, metrics.mae])
+                  metrics=['accuracy', eacc, mse, mae])
 
     return model
 
@@ -111,19 +129,22 @@ if MODE == 1:
         factor=0.5,
         patience=10)
 
+    scheduler = LearningRateScheduler(learning_scheduler)
+
     model.fit(
         Y_channel,
         UV_channel,
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
-        validation_split=0.1,
-        callbacks=[model_checkpoint, reduce_lr])
+        validation_data=(Y_channel_test, UV_channel_test),
+        callbacks=[model_checkpoint, scheduler])
 
 elif MODE == 2:
-    for i in range(45000, 50000):
-        y = Y_channel[i].T
-        yuv_original = np.r_[(y, UV_channel[i].T[:1], UV_channel[i].T[1:])]
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
-        yuv_pred = np.r_[(y, uv_pred.T[:1], uv_pred.T[1:])]
+    for i in range(0, 5000):
+        y = Y_channel_test[i]
+        uv = UV_channel_test / 255
+        uv_pred = np.array(model.predict(y[None, :, :, :]))[0] / 255
+        yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
+        yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
         show_yuv(yuv_original, yuv_pred)

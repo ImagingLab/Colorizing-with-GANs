@@ -5,8 +5,12 @@ from keras import metrics
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
-from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, add, LeakyReLU, \
-    Conv2D
+from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, LeakyReLU, Conv2D
+
+import os, sys, inspect
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+
 from dataset import *
 from utils import *
 
@@ -17,7 +21,7 @@ INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model6.hdf5'
 MODE = 2  # 1: train - 2: test
 
-data_yuv, data_rgb, data_grey = load_data(shuffle=False, count=256)
+data_yuv, data_rgb, load_cifar10_data(shuffle=False, count=256)
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:] * 1000
 

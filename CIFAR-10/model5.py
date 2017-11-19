@@ -6,6 +6,11 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
 from keras.layers import Input, MaxPool2D, Activation, BatchNormalization, UpSampling2D, concatenate, LeakyReLU, Conv2D
+
+import os, sys, inspect
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+
 from dataset import *
 from utils import *
 
@@ -16,13 +21,15 @@ INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model5.hdf5'
 MODE = 1  # 1: train - 2: visualize
 
-data_yuv, data_rgb, data_grey = load_data()
-data_test_yuv, data_test_rgb, data_test_grey = load_test_data()
+data_yuv, data_rgb = load_cifar10_data()
+data_test_yuv, data_test_rgb = load_cfar10_test_data()
 
 data_rgb = data_rgb / 255
+data_grey = color.rgb2grey(data_rgb)
 data_grey = data_grey[:, :, :, None]
 
 data_test_rgb = data_test_rgb / 255
+data_test_grey = color.rgb2grey(data_test_rgb)
 data_test_grey = data_test_grey[:, :, :, None]
 
 
