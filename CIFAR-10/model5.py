@@ -11,14 +11,19 @@ from utils import *
 
 EPOCHS = 500
 BATCH_SIZE = 128
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0002
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model5.hdf5'
-MODE = 2  # 1: train - 2: test
+MODE = 1  # 1: train - 2: visualize
 
 data_yuv, data_rgb, data_grey = load_data()
+data_test_yuv, data_test_rgb, data_test_grey = load_test_data()
+
 data_rgb = data_rgb / 255
 data_grey = data_grey[:, :, :, None]
+
+data_test_rgb = data_test_rgb / 255
+data_test_grey = data_test_grey[:, :, :, None]
 
 
 def eacc(y_true, y_pred):
@@ -34,7 +39,7 @@ def mae(y_true, y_pred):
 
 
 def learning_scheduler(epoch):
-    lr = LEARNING_RATE / (2 ** (epoch // 20))
+    lr = LEARNING_RATE / (2 ** (epoch // 50))
     print('\nlearning rate: ' + str(lr) + '\n')
     return lr
 
@@ -122,18 +127,17 @@ if MODE == 1:
 
     scheduler = LearningRateScheduler(learning_scheduler)
 
-
     model.fit(
         data_grey,
         data_rgb,
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
-        validation_split=0.1,
+        validation_data=(data_test_grey, data_test_rgb),
         callbacks=[model_checkpoint, scheduler])
 
 elif MODE == 2:
-    for i in range(45000, 50000):
-        rgb_original = data_rgb[i]
-        rgb_pred = np.array(model.predict(data_grey[i:i+1]))[0]
+    for i in range(0, 5000):
+        rgb_original = data_test_rgb[i]
+        rgb_pred = np.array(model.predict(data_test_grey[i:i + 1]))[0]
         show_rgb(rgb_original, rgb_pred)

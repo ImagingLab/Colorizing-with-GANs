@@ -11,7 +11,7 @@ from utils import *
 
 EPOCHS = 10000
 BATCH_SIZE = 128
-LEARNING_RATE = 0.00002
+LEARNING_RATE = 0.00001
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model3.hdf5'
 MODE = 1  # 1: train - 2: visualize

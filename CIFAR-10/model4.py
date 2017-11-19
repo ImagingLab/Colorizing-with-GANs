@@ -19,14 +19,19 @@ from utils import *
 
 EPOCHS = 500
 BATCH_SIZE = 128
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0002
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model4.hdf5'
-MODE = 2  # 1: train - 2: test
+MODE = 1  # 1: train - 2: visualize
 
 data_yuv, data_rgb, data_grey = load_data()
+data_test_yuv, data_test_rgb, data_test_grey = load_test_data()
+
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:]
+
+Y_channel_test = data_test_yuv[:, :, :, :1]
+UV_channel_test = data_test_yuv[:, :, :, 1:]
 
 
 def eacc(y_true, y_pred):
@@ -199,14 +204,14 @@ if MODE == 1:
         batch_size=BATCH_SIZE,
         epochs=EPOCHS,
         verbose=1,
-        validation_split=0.1,
+        validation_data=(Y_channel_test, UV_channel_test),
         callbacks=[model_checkpoint, scheduler])
 
 elif MODE == 2:
-    for i in range(45000, 50000):
-        y = Y_channel[i]
-        yuv_original = np.r_[(y.T, UV_channel[i][:, :, :1].T, UV_channel[i][:, :, 1:].T)].T
-        uv_pred = np.array(model.predict(Y_channel[i][None, :, :, :]))[0]
+    for i in range(0, 5000):
+        y = Y_channel_test[i]
+        uv = UV_channel_test
+        uv_pred = np.array(model.predict(y[None, :, :, :]))[0]
+        yuv_original = np.r_[(y.T, uv[i][:, :, :1].T, uv[i][:, :, 1:].T)].T
         yuv_pred = np.r_[(y.T, uv_pred.T[:1], uv_pred.T[1:])].T
-
         show_yuv(yuv_original, yuv_pred)
