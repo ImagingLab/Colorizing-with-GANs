@@ -31,11 +31,13 @@ def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
 
     if outType == 'YUV':
         data_out = color.rgb2yuv(data_RGB)
+        return data_out, data_RGB  # returns YUV as 4D tensor and RGB as 4D tensor
+
     elif outType == 'LAB':
         data_out = color.rgb2lab(data_RGB)
+        data_gray = color.rgb2gray(data_RGB)
+        return data_out, data_gray  # returns LAB and grayscale as 4D tensor
 
-
-    return data_out, data_RGB  # returns YUV as 4D tensor and RGB as 4D tensor
 
 
 def show_yuv(yuv_original, yuv_pred):
@@ -70,6 +72,7 @@ def show_rgb(rgb_original, rgb_pred):
     plt.imshow(rgb_pred)
 
     plt.show()
+
 
 def show_lab(lab_original, lab_pred):
     grey = color.rgb2grey(lab_original)

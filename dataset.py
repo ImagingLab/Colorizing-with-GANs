@@ -39,7 +39,7 @@ def read_cifar10_data(directory):
     return names, data, labels, data_test, labels_test
 
 
-def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1):
+def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1, outType='YUV'):
     names, data, labels, data_test, labels_test = read_cifar10_data('../../../datasets/cfar10/')
 
     if shuffle:
@@ -48,16 +48,16 @@ def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1):
     if count != -1:
         data = data[:count]
 
-    return preproc(data, normalize=normalize, flip=flip)
+    return preproc(data, normalize=normalize, flip=flip, outType=outType)
 
 
-def load_cfar10_test_data(normalize=False, count=-1):
+def load_cfar10_test_data(normalize=False, count=-1, outType='YUV'):
     names, data, labels, data_test, labels_test = read_cifar10_data('../../../datasets/cfar10/')
 
     if count != -1:
         data_test = data[:count]
 
-    return preproc(data_test, normalize=normalize)
+    return preproc(data_test, normalize=normalize, outType=outType)
 
 
 def load_imagenet_data(idx, normalize=False, flip=False, count=-1):
@@ -84,7 +84,7 @@ def load_imagenet_test_data(normalize=False, count=-1):
 
 def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1):
     while True:
-        for idx in range(10, 0,-1):
+        for idx in range(10, 0, -1):
             data_file = '../../../datasets/ImageNet/train_data_batch_'
             d = unpickle(data_file + str(idx))
             x = d['data']
