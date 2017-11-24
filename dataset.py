@@ -8,6 +8,7 @@ Created on Wed Nov 15 21:17:10 2017
 import os
 import pickle
 import numpy as np
+from skimage import color
 from utils import preproc
 
 
@@ -80,24 +81,33 @@ def load_imagenet_test_data(normalize=False, count=-1):
 
     return preproc(x, normalize=normalize)
 
-# import pickle
-#
-# for batch in range(1, 11):
-#     print('read batch ' + str(batch))
-#     d = unpickle('../../../datasets/ImageNet/train_data_batch_' + str(batch))
-#     print('read batch ' + str(batch) + ' complete')
-#     x = d['data']
-#     img_size = int(x.shape[1] / 3)
-#     data_size = 32000
-#
-#     for sec in range(1, 5):
-#         ix = str((batch - 1) * 4 + sec)
-#         data = x[(sec - 1) * data_size:sec * data_size]
-#         print('convert section ' + ix)
-#         data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
-#         data_RGB = data_RGB.reshape((data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
-#         data_RGB = data_RGB[0:data_size, :, :, :]
-#         data_RGB_flip = data_RGB[:, :, :, ::-1]
-#         data_RGB = np.concatenate((data_RGB, data_RGB_flip), axis=0)
-#         print('convert section ' + ix + ' complete')
-#         pickle.dump(data_RGB, open('../../../datasets/ImageNet/train_' + ix, 'wb'))
+
+def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1):
+    while True:
+        for idx in range(10, 0,-1):
+            data_file = '../../../datasets/ImageNet/train_data_batch_'
+            d = unpickle(data_file + str(idx))
+            x = d['data']
+            mean_image = d['mean']
+            count = 0
+            while count <= x.shape[0] - batch_size:
+                data = x[count:count + batch_size]
+                count = count + batch_size
+                data_yuv, data_rgb = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image)
+                yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
+
+
+def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1):
+    d = unpickle('../../../datasets/ImageNet/val_data')
+    x = d['data']
+
+    if count != -1:
+        x = x[:count]
+
+    while True:
+        count = 0
+        while count <= x.shape[0] - batch_size:
+            data = x[count:count + batch_size]
+            count = count + batch_size
+            data_yuv, data_rgb = preproc(data, normalize=normalize)
+            yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale

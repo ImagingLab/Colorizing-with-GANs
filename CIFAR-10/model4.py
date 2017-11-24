@@ -27,7 +27,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 0.0002
 INPUT_SHAPE = (32, 32, 1)
 WEIGHTS = 'model4.hdf5'
-MODE = 1  # 1: train - 2: visualize
+MODE = 2  # 1: train - 2: visualize
 
 data_yuv, data_rgb = load_cifar10_data()
 data_test_yuv, data_test_rgb = load_cfar10_test_data()
