@@ -35,7 +35,7 @@ def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
 
     elif outType == 'LAB':
         data_out = color.rgb2lab(data_RGB)
-        data_gray = color.rgb2gray(data_RGB)
+        data_gray = color.rgb2gray(data_RGB)[:, :, :, None]
         return data_out, data_gray  # returns LAB and grayscale as 4D tensor
 
 
@@ -75,6 +75,9 @@ def show_rgb(rgb_original, rgb_pred):
 
 
 def show_lab(lab_original, lab_pred):
+    lab_pred = lab_pred.astype(np.float64)
+    rgb_original = np.clip(color.lab2rgb(lab_original), 0, 1)
+    rgb_pred = np.clip(np.abs(color.lab2rgb(lab_pred)), 0, 1)
     grey = color.rgb2grey(lab_original)
 
     fig = plt.figure()
@@ -82,9 +85,9 @@ def show_lab(lab_original, lab_pred):
     plt.imshow(grey, cmap='gray')
 
     fig.add_subplot(1, 3, 2).set_title('original')
-    plt.imshow(lab_original)
+    plt.imshow(rgb_original)
 
     fig.add_subplot(1, 3, 3).set_title('colorized')
-    plt.imshow(lab_pred)
+    plt.imshow(rgb_pred)
 
     plt.show()

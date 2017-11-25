@@ -60,7 +60,7 @@ def load_cfar10_test_data(normalize=False, count=-1, outType='YUV'):
     return preproc(data_test, normalize=normalize, outType=outType)
 
 
-def load_imagenet_data(idx, normalize=False, flip=False, count=-1):
+def load_imagenet_data(idx, normalize=False, flip=False, count=-1, outType='YUV'):
     data_file = '../../../datasets/ImageNet/train_data_batch_'
     d = unpickle(data_file + str(idx))
     x = d['data']
@@ -69,22 +69,22 @@ def load_imagenet_data(idx, normalize=False, flip=False, count=-1):
     if count != -1:
         x = x[:count]
 
-    return preproc(x, normalize=normalize, flip=flip, mean_image=mean_image)
+    return preproc(x, normalize=normalize, flip=flip, mean_image=mean_image, outType=outType)
 
 
-def load_imagenet_test_data(normalize=False, count=-1):
+def load_imagenet_test_data(normalize=False, count=-1, outType='YUV'):
     d = unpickle('../../../datasets/ImageNet/val_data')
     x = d['data']
 
     if count != -1:
         x = x[:count]
 
-    return preproc(x, normalize=normalize)
+    return preproc(x, normalize=normalize, outType=outType)
 
 
-def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1):
+def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1, outType='YUV'):
     while True:
-        for idx in range(10, 0, -1):
+        for idx in range(1, 11):
             data_file = '../../../datasets/ImageNet/train_data_batch_'
             d = unpickle(data_file + str(idx))
             x = d['data']
@@ -93,11 +93,17 @@ def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1):
             while count <= x.shape[0] - batch_size:
                 data = x[count:count + batch_size]
                 count = count + batch_size
-                data_yuv, data_rgb = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image)
-                yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
+
+                if outType == 'YUV':
+                    data_yuv, data_rgb = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image)
+                    yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
+
+                elif outType == 'LAB':
+                    lab , grey = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image, outType=outType)
+                    yield  grey, lab
 
 
-def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1):
+def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1, outType='YUV'):
     d = unpickle('../../../datasets/ImageNet/val_data')
     x = d['data']
 
@@ -109,5 +115,11 @@ def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1)
         while count <= x.shape[0] - batch_size:
             data = x[count:count + batch_size]
             count = count + batch_size
-            data_yuv, data_rgb = preproc(data, normalize=normalize)
-            yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
+
+            if outType == 'YUV':
+                data_yuv, data_rgb = preproc(data, normalize=normalize, outType=outType)
+                yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
+
+            elif outType == 'LAB':
+                lab, grey = preproc(data, normalize=normalize, outType=outType)
+                yield grey, lab
