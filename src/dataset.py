@@ -40,7 +40,7 @@ def read_cifar10_data(directory):
 
 
 def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1, outType='YUV'):
-    names, data, labels, data_test, labels_test = read_cifar10_data('../../../datasets/cfar10/')
+    names, data, labels, data_test, labels_test = read_cifar10_data('../../../../datasets/cfar10/')
 
     if shuffle:
         np.random.shuffle(data)
@@ -52,7 +52,7 @@ def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1, outT
 
 
 def load_cfar10_test_data(normalize=False, count=-1, outType='YUV'):
-    names, data, labels, data_test, labels_test = read_cifar10_data('../../../datasets/cfar10/')
+    names, data, labels, data_test, labels_test = read_cifar10_data('../../../../datasets/cfar10/')
 
     if count != -1:
         data_test = data[:count]
@@ -61,7 +61,7 @@ def load_cfar10_test_data(normalize=False, count=-1, outType='YUV'):
 
 
 def load_imagenet_data(idx, normalize=False, flip=False, count=-1, outType='YUV'):
-    data_file = '../../../datasets/ImageNet/train_data_batch_'
+    data_file = '../../../../datasets/ImageNet/train_data_batch_'
     d = unpickle(data_file + str(idx))
     x = d['data']
     mean_image = d['mean']
@@ -73,7 +73,7 @@ def load_imagenet_data(idx, normalize=False, flip=False, count=-1, outType='YUV'
 
 
 def load_imagenet_test_data(normalize=False, count=-1, outType='YUV'):
-    d = unpickle('../../../datasets/ImageNet/val_data')
+    d = unpickle('../../../../datasets/ImageNet/val_data')
     x = d['data']
 
     if count != -1:
@@ -85,7 +85,7 @@ def load_imagenet_test_data(normalize=False, count=-1, outType='YUV'):
 def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1, outType='YUV'):
     while True:
         for idx in range(1, 11):
-            data_file = '../../../datasets/ImageNet/train_data_batch_'
+            data_file = '../../../../datasets/ImageNet/train_data_batch_'
             d = unpickle(data_file + str(idx))
             x = d['data']
             mean_image = d['mean']
@@ -104,7 +104,7 @@ def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1, ou
 
 
 def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1, outType='YUV'):
-    d = unpickle('../../../datasets/ImageNet/val_data')
+    d = unpickle('../../../../datasets/ImageNet/val_data')
     x = d['data']
 
     if count != -1:
