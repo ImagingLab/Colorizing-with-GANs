@@ -19,6 +19,10 @@ def eacc(y_true, y_pred):
     return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
 
 
+def l1(y_true, y_pred):
+    return K.sum(K.abs(y_pred - y_true), axis=-1)
+
+
 def create_conv(filters, kernel_size, inputs, name=None, bn=True, padding='same', activation='relu'):
     conv = Conv2D(filters, kernel_size, padding=padding,
                   kernel_initializer='he_normal', name=name)(inputs)
@@ -127,9 +131,9 @@ def create_models(input_shape_gen, input_shape_dis, lr, momentum, l1_wight):
 
     model_gan = create_model_gan(input_shape_gen, model_gen, model_dis)
     model_gan.compile(
-        loss=[losses.binary_crossentropy, losses.mean_absolute_error],
+        loss=[losses.binary_crossentropy, l1],
         metrics=[eacc],
-        loss_weights=[l1_wight, 1],
+        loss_weights=[1, l1_wight],
         optimizer=optimizer
     )
 

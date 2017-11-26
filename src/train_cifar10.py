@@ -9,7 +9,7 @@ from utils import show_lab
 
 EPOCHS = 1000
 BATCH_SIZE = 128
-LEARNING_RATE = 0.002
+LEARNING_RATE = 0.001
 MOMENTUM = 0.5
 LAMBDA = 100
 INPUT_SHAPE_GEN = (32, 32, 1)
@@ -66,7 +66,7 @@ if MODE == 1:
 
             dis_loss = model_dis.train_on_batch(x_dis, y_dis)
 
-            model_dis.trainable = False
+            model_dis.trainable128 = False
             x_gen = grey_batch
             y_gen = np.ones((BATCH_SIZE, 1))
             x_output = lab_batch
@@ -77,8 +77,10 @@ if MODE == 1:
 
             progbar.add(BATCH_SIZE,
                         values=[("D loss", dis_loss),
-                                ("G loss", gen_loss[0]),
-                                ("G L1", gen_loss[1])])
+                                ("G total loss", gen_loss[0]),
+                                ("G loss", gen_loss[1]),
+                                ("G L1", gen_loss[2]),
+                                ("acc", gen_loss[4])])
 
         print("")
         print('Epoch %s/%s, Time: %s' % (e + 1, EPOCHS, time.time() - start))
