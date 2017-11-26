@@ -117,6 +117,7 @@ def create_model():
 
 if MODE == 1:
     model = create_model()
+    model.summary()
     model_checkpoint = ModelCheckpoint(
         filepath=WEIGHTS,
         monitor='loss',

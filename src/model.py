@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import keras.backend as K
 from keras import losses
@@ -12,11 +11,13 @@ from keras.layers import UpSampling2D
 from keras.layers import LeakyReLU
 from keras.layers import Conv2D
 from keras.layers import Dense
+from keras.layers import Flatten
 from keras.layers import concatenate
 
 
 def eacc(y_true, y_pred):
     return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
+
 
 def create_conv(filters, kernel_size, inputs, name=None, bn=True, padding='same', activation='relu'):
     conv = Conv2D(filters, kernel_size, padding=padding,
@@ -82,21 +83,22 @@ def create_model_gen(input_shape):
 
 def create_model_dis(input_shape):
     inputs = Input(input_shape)
-    conv1 = create_conv(64, (3, 3), inputs, 'conv1_1', activation='leakyrelu')
+    conv1 = create_conv(64, (3, 3), inputs, 'conv1', activation='leakyrelu')
     pool1 = MaxPool2D((2, 2))(conv1)
 
-    conv2 = create_conv(128, (3, 3), pool1, 'conv2_1', activation='leakyrelu')
+    conv2 = create_conv(128, (3, 3), pool1, 'conv2', activation='leakyrelu')
     pool2 = MaxPool2D((2, 2))(conv2)
 
-    conv3 = create_conv(256, (3, 3), pool2, 'conv3_1', activation='leakyrelu')
+    conv3 = create_conv(256, (3, 3), pool2, 'conv3', activation='leakyrelu')
     pool3 = MaxPool2D((2, 2))(conv3)
 
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4_1', activation='leakyrelu')
+    conv4 = create_conv(512, (3, 3), pool3, 'conv4', activation='leakyrelu')
     pool4 = MaxPool2D((2, 2))(conv4)
 
-    conv5 = create_conv(512, (3, 3), pool4, 'conv5_1', activation='leakyrelu')
+    conv5 = create_conv(512, (3, 3), pool4, 'conv5', activation='leakyrelu')
 
-    dense6 = Dense(1, activation='sigmoid')(conv5)
+    flat = Flatten()(conv5)
+    dense6 = Dense(1, activation='sigmoid')(flat)
 
     model = Model(inputs=inputs, outputs=dense6, name='discriminator')
 
@@ -107,25 +109,26 @@ def create_model_gan(input_shape, generator, discriminator):
     input = Input(input_shape)
 
     gen_out = generator(input)
-    dis_output = discriminator(gen_out)
+    dis_out = discriminator(concatenate([gen_out, input], axis=3))
 
-    model = Model(inputs=input, outputs=[gen_out, dis_output], name='dcgan')
+    model = Model(inputs=[input], outputs=[dis_out, gen_out], name='dcgan')
 
     return model
 
 
-def create_models(input_shape, lr, momentum, l1_wight):
+def create_models(input_shape_gen, input_shape_dis, lr, momentum, l1_wight):
     optimizer = Adam(lr=lr, beta_1=momentum)
 
-    model_gen = create_model_gen(input_shape)
+    model_gen = create_model_gen(input_shape_gen)
     model_gen.compile(loss=losses.mean_absolute_error, optimizer=optimizer)
 
-    model_dis = create_model_dis((input_shape.shape[0], input_shape.shape[1], 4))
+    model_dis = create_model_dis(input_shape_dis)
     model_dis.trainable = False
 
-    model_gan = create_model_gan(input_shape, model_gen, model_dis)
+    model_gan = create_model_gan(input_shape_gen, model_gen, model_dis)
     model_gan.compile(
-        loss=[losses.binary_crossentropy, losses.mean_absolute_error, eacc],
+        loss=[losses.binary_crossentropy, losses.mean_absolute_error],
+        metrics=[eacc],
         loss_weights=[l1_wight, 1],
         optimizer=optimizer
     )
