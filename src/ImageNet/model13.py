@@ -22,7 +22,7 @@ VALIDATION_SIZE = 4096
 LEARNING_RATE = 0.001
 INPUT_SHAPE = (64, 64, 1)
 WEIGHTS = 'model13.hdf5'
-MODE = 1  # 1: train - 2: visualize
+MODE = 2  # 1: train - 2: visualize
 
 
 def eacc(y_true, y_pred):

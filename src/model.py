@@ -42,7 +42,7 @@ def create_conv(filters, kernel_size, inputs, name=None, bn=True, dropout=0., pa
     return conv
 
 
-def create_model_gen(input_shape):
+def create_model_gen(input_shape, output_channels):
     inputs = Input(input_shape)
     conv1 = create_conv(64, (3, 3), inputs, 'conv1_1', activation='leakyrelu')
     conv1 = create_conv(64, (3, 3), conv1, 'conv1_2', activation='leakyrelu')
@@ -82,7 +82,7 @@ def create_model_gen(input_shape):
     merge9 = concatenate([conv1, up9], axis=3)
     conv9 = create_conv(64, (3, 3), merge9, 'conv9_1', activation='relu')
     conv9 = create_conv(64, (3, 3), conv9, 'conv9_2', activation='relu')
-    conv9 = Conv2D(3, (1, 1), padding='same', name='conv9_3')(conv9)
+    conv9 = Conv2D(output_channels, (1, 1), padding='same', name='conv9_3')(conv9)
 
     model = Model(inputs=inputs, outputs=conv9, name='generator')
 
@@ -124,16 +124,16 @@ def create_model_gan(input_shape, generator, discriminator):
     return model
 
 
-def create_models(input_shape_gen, input_shape_dis, lr, momentum, loss_weights):
+def create_models(input_shape_gen, input_shape_dis, output_channels, lr, momentum, loss_weights):
     optimizer = Adam(lr=lr, beta_1=momentum)
 
-    model_gen = create_model_gen(input_shape_gen)
+    model_gen = create_model_gen(input_shape=input_shape_gen, output_channels=output_channels)
     model_gen.compile(loss=losses.mean_absolute_error, optimizer=optimizer)
 
-    model_dis = create_model_dis(input_shape_dis)
+    model_dis = create_model_dis(input_shape=input_shape_dis)
     model_dis.trainable = False
 
-    model_gan = create_model_gan(input_shape_gen, model_gen, model_dis)
+    model_gan = create_model_gan(input_shape=input_shape_gen, generator=model_gen, discriminator=model_dis)
     model_gan.compile(
         loss=[losses.binary_crossentropy, l1],
         metrics=[eacc, 'accuracy'],

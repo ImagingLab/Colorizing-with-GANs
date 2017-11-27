@@ -3,7 +3,7 @@ import time
 import numpy as np
 from keras.utils import generic_utils
 from model import create_models
-from dataset import load_cifar10_data, load_cfar10_test_data
+from dataset import load_cifar10_data, load_cifar10_test_data
 from utils import show_lab
 
 EPOCHS = 1000
@@ -14,14 +14,15 @@ LAMBDA1 = 1
 LAMBDA2 = 100
 INPUT_SHAPE_GEN = (32, 32, 1)
 INPUT_SHAPE_DIS = (32, 32, 4)
-WEIGHTS_GEN = 'weights_cifar10_gen.hdf5'
-WEIGHTS_DIS = 'weights_cifar10_dis.hdf5'
-WEIGHTS_GAN = 'weights_cifar10_gan.hdf5'
-MODE = 1  # 1: train - 2: visualize
+WEIGHTS_GEN = 'weights_cifar10_lab_gen.hdf5'
+WEIGHTS_DIS = 'weights_cifar10_lab_dis.hdf5'
+WEIGHTS_GAN = 'weights_cifar10_lab_gan.hdf5'
+MODE = 2  # 1: train - 2: visualize
 
 model_gen, model_dis, model_gan = create_models(
     input_shape_gen=INPUT_SHAPE_GEN,
     input_shape_dis=INPUT_SHAPE_DIS,
+    output_channels=3,
     lr=LEARNING_RATE,
     momentum=MOMENTUM,
     loss_weights=[LAMBDA1, LAMBDA2])
@@ -41,7 +42,7 @@ model_gan.summary()
 
 if MODE == 1:
     data_lab, data_grey = load_cifar10_data(outType='LAB')
-    data_test_lab, data_test_grey = load_cfar10_test_data(outType='LAB')
+    data_test_lab, data_test_grey = load_cifar10_test_data(outType='LAB')
 
     print("Start training")
     for e in range(EPOCHS):

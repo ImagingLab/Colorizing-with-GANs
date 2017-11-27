@@ -42,12 +42,15 @@ def show_yuv(yuv_original, yuv_pred):
 
     fig = plt.figure()
     fig.add_subplot(1, 3, 1).set_title('greyscale')
+    plt.axis('off')
     plt.imshow(grey, cmap='gray')
 
     fig.add_subplot(1, 3, 2).set_title('original')
+    plt.axis('off')
     plt.imshow(rgb_original)
 
     fig.add_subplot(1, 3, 3).set_title('colorized')
+    plt.axis('off')
     plt.imshow(rgb_pred)
 
     plt.show()
@@ -58,12 +61,15 @@ def show_rgb(rgb_original, rgb_pred):
 
     fig = plt.figure()
     fig.add_subplot(1, 3, 1).set_title('greyscale')
+    plt.axis('off')
     plt.imshow(grey, cmap='gray')
 
     fig.add_subplot(1, 3, 2).set_title('original')
+    plt.axis('off')
     plt.imshow(rgb_original)
 
     fig.add_subplot(1, 3, 3).set_title('colorized')
+    plt.axis('off')
     plt.imshow(rgb_pred)
 
     plt.show()
@@ -77,12 +83,15 @@ def show_lab(lab_original, lab_pred):
 
     fig = plt.figure()
     fig.add_subplot(1, 3, 1).set_title('greyscale')
+    plt.axis('off')
     plt.imshow(grey, cmap='gray')
 
     fig.add_subplot(1, 3, 2).set_title('original')
+    plt.axis('off')
     plt.imshow(rgb_original)
 
     fig.add_subplot(1, 3, 3).set_title('colorized')
+    plt.axis('off')
     plt.imshow(rgb_pred)
 
     plt.show()

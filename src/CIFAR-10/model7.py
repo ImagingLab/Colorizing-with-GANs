@@ -22,7 +22,7 @@ WEIGHTS = 'model7.hdf5'
 MODE = 2  # 1: train - 2: visualize
 
 data_lab, data_grey = load_cifar10_data(outType='LAB')
-data_test_lab, data_test_grey = load_cfar10_test_data(outType='LAB')
+data_test_lab, data_test_grey = load_cifar10_test_data(outType='LAB')
 
 
 def eacc(y_true, y_pred):

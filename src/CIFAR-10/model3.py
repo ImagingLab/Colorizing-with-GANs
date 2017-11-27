@@ -22,7 +22,7 @@ WEIGHTS = 'model3.hdf5'
 MODE = 2  # 1: train - 2: visualize
 
 data_yuv, data_rgb = load_cifar10_data()
-data_test_yuv, data_test_rgb = load_cfar10_test_data()
+data_test_yuv, data_test_rgb = load_cifar10_test_data()
 
 Y_channel = data_yuv[:, :, :, :1]
 UV_channel = data_yuv[:, :, :, 1:] * 255
