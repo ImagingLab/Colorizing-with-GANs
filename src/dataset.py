@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 15 21:17:10 2017
-
-@author: 100446517
-"""
-
 import os
 import pickle
 import numpy as np
@@ -99,8 +92,8 @@ def imagenet_data_generator(batch_size, normalize=False, flip=False, scale=1, ou
                     yield data_yuv[:, :, :, :1], data_yuv[:, :, :, 1:] * scale
 
                 elif outType == 'LAB':
-                    lab , grey = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image, outType=outType)
-                    yield  grey, lab
+                    lab, grey = preproc(data, normalize=normalize, flip=flip, mean_image=mean_image, outType=outType)
+                    yield lab, grey
 
 
 def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1, outType='YUV'):
@@ -122,4 +115,4 @@ def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1,
 
             elif outType == 'LAB':
                 lab, grey = preproc(data, normalize=normalize, outType=outType)
-                yield grey, lab
+                yield lab, grey

@@ -11,6 +11,7 @@ from keras.layers import UpSampling2D
 from keras.layers import LeakyReLU
 from keras.layers import Conv2D
 from keras.layers import Dense
+from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers import concatenate
 
@@ -23,17 +24,20 @@ def l1(y_true, y_pred):
     return K.sum(K.abs(y_pred - y_true), axis=-1)
 
 
-def create_conv(filters, kernel_size, inputs, name=None, bn=True, padding='same', activation='relu'):
+def create_conv(filters, kernel_size, inputs, name=None, bn=True, dropout=0., padding='same', activation='relu'):
     conv = Conv2D(filters, kernel_size, padding=padding,
                   kernel_initializer='he_normal', name=name)(inputs)
 
-    if bn == True:
+    if bn:
         conv = BatchNormalization()(conv)
 
     if activation == 'relu':
         conv = Activation(activation)(conv)
     elif activation == 'leakyrelu':
         conv = LeakyReLU()(conv)
+
+    if dropout != 0:
+        conv = Dropout(dropout)(conv)
 
     return conv
 
@@ -87,19 +91,19 @@ def create_model_gen(input_shape):
 
 def create_model_dis(input_shape):
     inputs = Input(input_shape)
-    conv1 = create_conv(64, (3, 3), inputs, 'conv1', activation='leakyrelu')
+    conv1 = create_conv(64, (3, 3), inputs, 'conv1', activation='leakyrelu', dropout=.8)
     pool1 = MaxPool2D((2, 2))(conv1)
 
-    conv2 = create_conv(128, (3, 3), pool1, 'conv2', activation='leakyrelu')
+    conv2 = create_conv(128, (3, 3), pool1, 'conv2', activation='leakyrelu', dropout=.8)
     pool2 = MaxPool2D((2, 2))(conv2)
 
-    conv3 = create_conv(256, (3, 3), pool2, 'conv3', activation='leakyrelu')
+    conv3 = create_conv(256, (3, 3), pool2, 'conv3', activation='leakyrelu', dropout=.8)
     pool3 = MaxPool2D((2, 2))(conv3)
 
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4', activation='leakyrelu')
+    conv4 = create_conv(512, (3, 3), pool3, 'conv4', activation='leakyrelu', dropout=.8)
     pool4 = MaxPool2D((2, 2))(conv4)
 
-    conv5 = create_conv(512, (3, 3), pool4, 'conv5', activation='leakyrelu')
+    conv5 = create_conv(512, (3, 3), pool4, 'conv5', activation='leakyrelu', dropout=.8)
 
     flat = Flatten()(conv5)
     dense6 = Dense(1, activation='sigmoid')(flat)
@@ -120,7 +124,7 @@ def create_model_gan(input_shape, generator, discriminator):
     return model
 
 
-def create_models(input_shape_gen, input_shape_dis, lr, momentum, l1_wight):
+def create_models(input_shape_gen, input_shape_dis, lr, momentum, loss_weights):
     optimizer = Adam(lr=lr, beta_1=momentum)
 
     model_gen = create_model_gen(input_shape_gen)
@@ -132,8 +136,8 @@ def create_models(input_shape_gen, input_shape_dis, lr, momentum, l1_wight):
     model_gan = create_model_gan(input_shape_gen, model_gen, model_dis)
     model_gan.compile(
         loss=[losses.binary_crossentropy, l1],
-        metrics=[eacc],
-        loss_weights=[1, l1_wight],
+        metrics=[eacc, 'accuracy'],
+        loss_weights=loss_weights,
         optimizer=optimizer
     )
 

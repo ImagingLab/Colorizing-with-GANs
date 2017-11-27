@@ -3,20 +3,22 @@ import time
 import numpy as np
 from keras.utils import generic_utils
 from model import create_models
-from dataset import load_cifar10_data, load_cfar10_test_data
+from dataset import imagenet_data_generator, imagenet_test_data_generator
 from utils import show_lab
 
 EPOCHS = 1000
-BATCH_SIZE = 128
-LEARNING_RATE = 0.00002
-MOMENTUM = 0.9
+BATCH_SIZE = 64
+LEARNING_RATE = 0.002
+MOMENTUM = 0.7
 LAMBDA1 = 1
 LAMBDA2 = 100
-INPUT_SHAPE_GEN = (32, 32, 1)
-INPUT_SHAPE_DIS = (32, 32, 4)
-WEIGHTS_GEN = 'weights_cifar10_gen.hdf5'
-WEIGHTS_DIS = 'weights_cifar10_dis.hdf5'
-WEIGHTS_GAN = 'weights_cifar10_gan.hdf5'
+VALIDATION_SIZE = 4096
+IMAGENET_SIZE = 1281160
+INPUT_SHAPE_GEN = (64, 64, 1)
+INPUT_SHAPE_DIS = (64, 64, 4)
+WEIGHTS_GEN = 'weights_imagenet_gen.hdf5'
+WEIGHTS_DIS = 'weights_imagenet_dis.hdf5'
+WEIGHTS_GAN = 'weights_imagenet_gan.hdf5'
 MODE = 1  # 1: train - 2: visualize
 
 model_gen, model_dis, model_gan = create_models(
@@ -40,39 +42,38 @@ model_dis.summary()
 model_gan.summary()
 
 if MODE == 1:
-    data_lab, data_grey = load_cifar10_data(outType='LAB')
-    data_test_lab, data_test_grey = load_cfar10_test_data(outType='LAB')
+    data_generator = imagenet_data_generator(batch_size=BATCH_SIZE, flip=False, outType='LAB')
+    test_data_generator = imagenet_test_data_generator(batch_size=BATCH_SIZE, count=VALIDATION_SIZE, outType='LAB')
 
     print("Start training")
     for e in range(EPOCHS):
-        batch_counter = 1
         toggle = True
-        batch_total = data_lab.shape[0] // BATCH_SIZE
+        batch_counter = 1
+        batch_total = IMAGENET_SIZE // BATCH_SIZE
         progbar = generic_utils.Progbar(batch_total * BATCH_SIZE)
         start = time.time()
         dis_res = 0
 
         while batch_counter < batch_total:
-            lab_batch = data_lab[(batch_counter - 1) * BATCH_SIZE:batch_counter * BATCH_SIZE]
-            grey_batch = data_grey[(batch_counter - 1) * BATCH_SIZE:batch_counter * BATCH_SIZE]
 
             batch_counter += 1
+            data_lab, data_grey = next(data_generator)
 
             toggle = not toggle
             if toggle:
-                x_dis = np.concatenate((model_gen.predict(grey_batch), grey_batch), axis=3)
+                x_dis = np.concatenate((model_gen.predict(data_grey), data_grey), axis=3)
                 y_dis = np.zeros((BATCH_SIZE, 1))
             else:
-                x_dis = np.concatenate((lab_batch, grey_batch), axis=3)
+                x_dis = np.concatenate((data_lab, data_grey), axis=3)
                 y_dis = np.ones((BATCH_SIZE, 1))
-                # y_dis = np.random.uniform(low=0.9, high=1, size=BATCH_SIZE)
+                #y_dis = np.random.uniform(low=0.9, high=1, size=BATCH_SIZE)
 
             dis_res = model_dis.train_on_batch(x_dis, y_dis)
 
-            model_dis.trainable128 = False
-            x_gen = grey_batch
+            model_dis.trainable = False
+            x_gen = data_grey
             y_gen = np.ones((BATCH_SIZE, 1))
-            x_output = lab_batch
+            x_output = data_lab
             gan_res = model_gan.train_on_batch(x_gen, [y_gen, x_output])
             model_dis.trainable = True
 
@@ -84,7 +85,15 @@ if MODE == 1:
                                 ("pacc", gan_res[5]),
                                 ("acc", gan_res[6])])
 
+            if batch_counter % 1000 == 0:
+                print('')
+                print('Saving weights...')
+                model_gen.save_weights(WEIGHTS_GEN, overwrite=True)
+                model_dis.save_weights(WEIGHTS_DIS, overwrite=True)
+                model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
+
         print("")
+        data_test_lab, data_test_grey = next(test_data_generator)
         ev = model_gan.evaluate(data_test_grey, [np.ones((data_test_grey.shape[0], 1)), data_test_lab])
         ev = np.round(np.array(ev), 4)
         print('Epoch %s/%s, Time: %s' % (e + 1, EPOCHS, round(time.time() - start)))
