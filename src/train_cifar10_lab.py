@@ -9,7 +9,7 @@ from utils import show_lab
 EPOCHS = 500
 BATCH_SIZE = 128
 LEARNING_RATE = 0.0001
-MOMENTUM = 0.9
+MOMENTUM = 0.5
 LAMBDA1 = 1
 LAMBDA2 = 10
 INPUT_SHAPE_GEN = (32, 32, 1)
@@ -96,7 +96,7 @@ if MODE == 1:
         model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
 
 elif MODE == 2:
-    data_test_lab, data_test_grey = load_cifar10_data(outType='LAB')
+    data_test_lab, data_test_grey = load_cifar10_test_data(outType='LAB')
     for i in range(0, 5000):
         grey = data_test_grey[i]
         lab_original = data_test_lab[i]
