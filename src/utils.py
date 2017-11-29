@@ -49,7 +49,7 @@ def show_yuv(yuv_original, yuv_pred):
     plt.axis('off')
     plt.imshow(rgb_original)
 
-    fig.add_subplot(1, 3, 3).set_title('colorized')
+    fig.add_subplot(1, 3, 3).set_title('gan')
     plt.axis('off')
     plt.imshow(rgb_pred)
 
@@ -68,7 +68,7 @@ def show_rgb(rgb_original, rgb_pred):
     plt.axis('off')
     plt.imshow(rgb_original)
 
-    fig.add_subplot(1, 3, 3).set_title('colorized')
+    fig.add_subplot(1, 3, 3).set_title('gan')
     plt.axis('off')
     plt.imshow(rgb_pred)
 
@@ -90,7 +90,7 @@ def show_lab(lab_original, lab_pred):
     plt.axis('off')
     plt.imshow(rgb_original)
 
-    fig.add_subplot(1, 3, 3).set_title('colorized')
+    fig.add_subplot(1, 3, 3).set_title('gan')
     plt.axis('off')
     plt.imshow(rgb_pred)
 

@@ -1,9 +1,10 @@
 import os
+import glob
 import pickle
 import numpy as np
+from scipy.misc import imread
 from skimage import color
 from utils import preproc
-
 
 CIFAR10_PATH = '../../../datasets/cfar10'
 IMAGENET_PATH = '../../../datasets/ImageNet'
@@ -37,7 +38,17 @@ def read_cifar10_data(directory):
 
 
 def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1, outType='YUV'):
-    names, data, labels, data_test, labels_test = read_cifar10_data(CIFAR10_PATH)
+    names = unpickle('{}/batches.meta'.format(CIFAR10_PATH))[b'label_names']
+    data, labels = [], []
+    for i in range(1, 6):
+        filename = '{}/data_batch_{}'.format(CIFAR10_PATH, i)
+        batch_data = unpickle(filename)
+        if len(data) > 0:
+            data = np.vstack((data, batch_data[b'data']))
+            labels = np.hstack((labels, batch_data[b'labels']))
+        else:
+            data = batch_data[b'data']
+            labels = batch_data[b'labels']
 
     if shuffle:
         np.random.shuffle(data)
@@ -49,12 +60,26 @@ def load_cifar10_data(normalize=False, shuffle=False, flip=False, count=-1, outT
 
 
 def load_cifar10_test_data(normalize=False, count=-1, outType='YUV'):
-    names, data, labels, data_test, labels_test = read_cifar10_data(CIFAR10_PATH)
+    filename = '{}/test_batch'.format(CIFAR10_PATH)
+    batch_data = unpickle(filename)
+    data_test = batch_data[b'data']
+    labels_test = batch_data[b'labels']
 
     if count != -1:
-        data_test = data[:count]
+        data_test = data_test[:count]
 
     return preproc(data_test, normalize=normalize, outType=outType)
+
+
+def load_extra_data(outType='YUV'):
+    names = np.array(glob.glob('extra/*.jpg'))
+    files = np.array([imread(f) for f in names])
+
+    if outType == 'YUV':
+        return color.rgb2yuv(files), files
+
+    elif outType == 'LAB':
+        return color.rgb2lab(files), color.rgb2gray(files)[:, :, :, None]
 
 
 def load_imagenet_data(idx, normalize=False, flip=False, count=-1, outType='YUV'):

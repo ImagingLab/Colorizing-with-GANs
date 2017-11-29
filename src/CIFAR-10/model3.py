@@ -143,6 +143,7 @@ if MODE == 1:
 
 elif MODE == 2:
     for i in range(0, 5000):
+        print(i)
         y = Y_channel_test[i]
         uv = UV_channel_test / 255
         uv_pred = np.array(model.predict(y[None, :, :, :]))[0] / 255

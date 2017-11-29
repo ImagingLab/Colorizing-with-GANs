@@ -3,15 +3,15 @@ import time
 import numpy as np
 from keras.utils import generic_utils
 from model import create_models
-from dataset import load_cifar10_data, load_cifar10_test_data
+from dataset import load_cifar10_data, load_cifar10_test_data, load_extra_data
 from utils import show_yuv
 
-EPOCHS = 1000
+EPOCHS = 500
 BATCH_SIZE = 128
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 MOMENTUM = 0.5
 LAMBDA1 = 1
-LAMBDA2 = 1
+LAMBDA2 = 10
 INPUT_SHAPE_GEN = (32, 32, 1)
 INPUT_SHAPE_DIS = (32, 32, 3)
 WEIGHTS_GEN = 'weights_cifar10_yuv_gen.hdf5'
@@ -43,6 +43,9 @@ model_gan.summary()
 
 data_yuv, data_rgb = load_cifar10_data(outType='YUV')
 data_test_yuv, data_test_rgb = load_cifar10_test_data(outType='YUV')
+#data_extra_yuv, data_extra_rgb = load_extra_data(outType='YUV')
+#data_yuv = np.concatenate((data_extra_yuv, data_yuv), axis=0)
+#data_yuv = np.concatenate((data_yuv, data_test_yuv), axis=0)
 
 data_yuv = data_yuv * 255
 data_test_yuv = data_test_yuv * 255
@@ -77,7 +80,7 @@ if MODE == 1:
             else:
                 x_dis = np.concatenate((uv_batch, y_batch), axis=3)
                 y_dis = np.ones((BATCH_SIZE, 1))
-                # y_dis = np.random.uniform(low=0.9, high=1, size=BATCH_SIZE)
+                y_dis = np.random.uniform(low=0.9, high=1, size=BATCH_SIZE)
 
             dis_res = model_dis.train_on_batch(x_dis, y_dis)
 
@@ -97,17 +100,20 @@ if MODE == 1:
                                 ("acc", gan_res[6])])
 
         print("")
-        ev = model_gan.evaluate(data_test_y, [np.ones((data_test_y.shape[0], 1)), data_test_uv])
-        ev = np.round(np.array(ev), 4)
         print('Epoch %s/%s, Time: %s' % (e + 1, EPOCHS, round(time.time() - start)))
-        print('G total loss: %s - G loss: %s - G L1: %s: pacc: %s - acc: %s' % (ev[0], ev[1], ev[2], ev[5], ev[6]))
+        if e % 10 == 0:
+            ev = model_gan.evaluate(data_test_y, [np.ones((data_test_y.shape[0], 1)), data_test_uv])
+            ev = np.round(np.array(ev), 4)
+            print('G total loss: %s - G loss: %s - G L1: %s: pacc: %s - acc: %s' % (ev[0], ev[1], ev[2], ev[5], ev[6]))
         print('')
         model_gen.save_weights(WEIGHTS_GEN, overwrite=True)
         model_dis.save_weights(WEIGHTS_DIS, overwrite=True)
         model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
 
+
 elif MODE == 2:
     for i in range(0, 5000):
+        print(i)
         y = data_test_y[i]
         yuv_original = data_test_yuv[i]
         uv_pred = np.array(model_gen.predict(y[None, :, :, :]))[0]

@@ -137,6 +137,7 @@ if MODE == 1:
 
 elif MODE == 2:
     for i in range(0, 5000):
+        print(i)
         grey = data_test_grey[i:i+1]
         lab_original = data_test_lab[i]
         lab_pred = np.array(model.predict(grey))[0]

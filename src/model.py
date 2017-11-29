@@ -21,7 +21,7 @@ def eacc(y_true, y_pred):
 
 
 def l1(y_true, y_pred):
-    return K.sum(K.abs(y_pred - y_true), axis=-1)
+    return K.mean(K.abs(y_pred - y_true))
 
 
 def create_conv(filters, kernel_size, inputs, name=None, bn=True, dropout=0., padding='same', activation='relu'):
@@ -60,8 +60,8 @@ def create_model_gen(input_shape, output_channels):
     conv4 = create_conv(512, (3, 3), conv4, 'conv4_2', activation='leakyrelu')
     pool4 = MaxPool2D((2, 2))(conv4)
 
-    conv5 = create_conv(512, (3, 3), pool4, 'conv5_1', activation='leakyrelu')
-    conv5 = create_conv(512, (3, 3), conv5, 'conv5_2', activation='leakyrelu')
+    conv5 = create_conv(1024, (3, 3), pool4, 'conv5_1', activation='leakyrelu')
+    conv5 = create_conv(1024, (3, 3), conv5, 'conv5_2', activation='leakyrelu')
 
     up6 = create_conv(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6')
     merge6 = concatenate([conv4, up6], axis=3)

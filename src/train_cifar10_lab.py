@@ -6,18 +6,18 @@ from model import create_models
 from dataset import load_cifar10_data, load_cifar10_test_data
 from utils import show_lab
 
-EPOCHS = 1000
+EPOCHS = 500
 BATCH_SIZE = 128
-LEARNING_RATE = 0.00002
+LEARNING_RATE = 0.0001
 MOMENTUM = 0.9
 LAMBDA1 = 1
-LAMBDA2 = 100
+LAMBDA2 = 10
 INPUT_SHAPE_GEN = (32, 32, 1)
 INPUT_SHAPE_DIS = (32, 32, 4)
 WEIGHTS_GEN = 'weights_cifar10_lab_gen.hdf5'
 WEIGHTS_DIS = 'weights_cifar10_lab_dis.hdf5'
 WEIGHTS_GAN = 'weights_cifar10_lab_gan.hdf5'
-MODE = 2  # 1: train - 2: visualize
+MODE = 1  # 1: train - 2: visualize
 
 model_gen, model_dis, model_gan = create_models(
     input_shape_gen=INPUT_SHAPE_GEN,
