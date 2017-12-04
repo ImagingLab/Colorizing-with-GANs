@@ -145,3 +145,18 @@ def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1,
             elif outType == 'LAB':
                 lab, grey = preproc(data, normalize=normalize, outType=outType)
                 yield lab, grey
+
+
+def dir_data_generator(dir, batch_size, outType='YUV'):
+    names = np.array(glob.glob(dir + '/*.jpg'))
+    batch_count = len(names) // batch_size
+
+    while True:
+        for i in range(0, batch_count):
+            files = np.array([imread(f) for f in names[i * batch_size:i * batch_size + batch_size]])
+
+            if outType == 'YUV':
+                yield color.rgb2yuv(files), files
+
+            elif outType == 'LAB':
+                yield color.rgb2lab(files), color.rgb2gray(files)[:, :, :, None]
