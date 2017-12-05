@@ -21,6 +21,8 @@ WEIGHTS_DIS = 'weights_places365_lab_dis.hdf5'
 WEIGHTS_GAN = 'weights_places365_lab_gan.hdf5'
 MODE = 1  # 1: train - 2: visualize
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 model_gen, model_dis, model_gan = create_models(
     input_shape_gen=INPUT_SHAPE_GEN,
     input_shape_dis=INPUT_SHAPE_DIS,
@@ -45,8 +47,9 @@ if os.path.exists(WEIGHTS_GAN):
 
 PATH = '../../../datasets/Places365/val_256'
 TOTAL_SIZE = len(np.array(glob.glob(PATH + '/*.jpg')))
-data_generator = dir_data_generator(dir=PATH, batch_size=BATCH_SIZE, outType='LAB')
-test_data_generator = dir_data_generator(dir=PATH, batch_size=BATCH_SIZE, outType='LAB')
+TRAIN_SIZE = 30 * 1024
+data_gen = dir_data_generator(dir=PATH, batch_size=BATCH_SIZE, data_range=(0, TRAIN_SIZE), outType='LAB')
+test_data_gen = dir_data_generator(dir=PATH, batch_size=BATCH_SIZE, data_range=(TRAIN_SIZE, TOTAL_SIZE), outType='LAB')
 
 loss_gen = []
 loss_ave_gen = []
@@ -57,7 +60,7 @@ if MODE == 1:
     for e in range(EPOCHS):
         toggle = True
         batch_counter = 1
-        batch_total = TOTAL_SIZE // BATCH_SIZE
+        batch_total = TRAIN_SIZE // BATCH_SIZE
         progbar = generic_utils.Progbar(batch_total * BATCH_SIZE)
         start = time.time()
         dis_res = 0
@@ -66,7 +69,7 @@ if MODE == 1:
         while batch_counter < batch_total:
 
             batch_counter += 1
-            data_lab, data_grey = next(data_generator)
+            data_lab, data_grey = next(data_gen)
 
             if batch_counter % 2 == 0:
                 toggle = not toggle
@@ -96,9 +99,8 @@ if MODE == 1:
                                 ("pacc", gan_res[5]),
                                 ("acc", gan_res[6])])
 
-            loss_gen.append(gan_res[0])/work/mia
-            loss_ave_gen.append(np.average(np.array(loss_gen)))
-
+            #loss_gen.append(gan_res[0])
+            #loss_ave_gen.append(np.average(np.array(loss_gen)))
 
             # plt.ion()
             # plt.clf()
@@ -113,23 +115,23 @@ if MODE == 1:
                 model_gen.save_weights(WEIGHTS_GEN, overwrite=True)
                 model_dis.save_weights(WEIGHTS_DIS, overwrite=True)
                 model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
-                np.save('loss_gen', loss_gen)
-                np.save('loss_ave_gen', loss_ave_gen)
+                #np.save('loss_gen', loss_gen)
+                #np.save('loss_ave_gen', loss_ave_gen)
 
         print("")
-        # data_test_lab, data_test_grey = next(test_data_generator)
-        # ev = model_gan.evaluate(data_test_grey, [np.ones((data_test_grey.shape[0], 1)), data_test_lab])
-        # ev = np.round(np.array(ev), 4)
+        data_test_lab, data_test_grey = next(test_data_gen)
+        ev = model_gan.evaluate(data_test_grey, [np.ones((data_test_grey.shape[0], 1)), data_test_lab])
+        ev = np.round(np.array(ev), 4)
         print('Epoch %s/%s, Time: %s' % (e + 1, EPOCHS, round(time.time() - start)))
-        # print('G total loss: %s - G loss: %s - G L1: %s: pacc: %s - acc: %s' % (ev[0], ev[1], ev[2], ev[5], ev[6]))
+        print('G total loss: %s - G loss: %s - G L1: %s: pacc: %s - acc: %s' % (ev[0], ev[1], ev[2], ev[5], ev[6]))
         print('')
-    model_gen.save_weights(WEIGHTS_GEN, overwrite=True)
-    model_dis.save_weights(WEIGHTS_DIS, overwrite=True)
-    model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
+        model_gen.save_weights(WEIGHTS_GEN, overwrite=True)
+        model_dis.save_weights(WEIGHTS_DIS, overwrite=True)
+        model_gan.save_weights(WEIGHTS_GAN, overwrite=True)
 
 elif MODE == 2:
     while True:
-        data_test_lab, data_test_grey = next(test_data_generator)
+        data_test_lab, data_test_grey = next(test_data_gen)
         for i in range(0, data_test_lab.shape[0]):
             grey = data_test_grey[i]
             lab_original = data_test_lab[i]

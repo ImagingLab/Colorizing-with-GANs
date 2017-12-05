@@ -147,8 +147,12 @@ def imagenet_test_data_generator(batch_size, normalize=False, scale=1, count=-1,
                 yield lab, grey
 
 
-def dir_data_generator(dir, batch_size, outType='YUV'):
+def dir_data_generator(dir, batch_size, data_range=(0, 0), outType='YUV'):
     names = np.array(glob.glob(dir + '/*.jpg'))
+
+    if data_range != (0, 0):
+        names = names[data_range[0]:data_range[1]]
+
     batch_count = len(names) // batch_size
 
     while True:
