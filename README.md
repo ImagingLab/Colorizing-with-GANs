@@ -45,8 +45,9 @@ In our model, we have decided to use an alternate cost function for the generato
 <p align='center'>  
   <img src='img/gan_new.png' />
 </p>
+
 ### Conditional GAN
-In a traditional GAN, the input of the generator is randomly generated noise data z. However, this approach is not applicable to the automatic colorization problem due to the nature of its inputs. The generator must be modified to accept grayscale images as inputs rather than noise. This problem was addressed by using a variant of GAN called [conditional generative adversarial networks] (https://arxiv.org/abs/1411.1784). Since no noise is introduced, the input of the generator is treated as zero noise with the grayscale input as a prior. In addition, the input of the discriminator was also be modified to accommodate for the conditional network. By introducing these modifications, our final cost functions are as follows:
+In a traditional GAN, the input of the generator is randomly generated noise data z. However, this approach is not applicable to the automatic colorization problem due to the nature of its inputs. The generator must be modified to accept grayscale images as inputs rather than noise. This problem was addressed by using a variant of GAN called [conditional generative adversarial networks](https://arxiv.org/abs/1411.1784). Since no noise is introduced, the input of the generator is treated as zero noise with the grayscale input as a prior. In addition, the input of the discriminator was also be modified to accommodate for the conditional network. By introducing these modifications, our final cost functions are as follows:
 <p align='center'>  
   <img src='img/con_gan.png' />
 </p>
