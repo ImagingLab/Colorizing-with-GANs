@@ -55,3 +55,15 @@ The discriminator gets colored images from both generator and original data alon
 <p align='center'>  
   <img src='img/cgan.png' />
 </p>
+
+## Places365 Results
+Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
+<p align='center'>  
+  <img src='img/places365_1.png' />
+</p>
+<p align='center'>  
+  <img src='img/places365_2.png' />
+</p>
+<p align='center'>  
+  <img src='img/places365_3.png' />
+</p>
