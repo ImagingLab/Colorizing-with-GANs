@@ -56,6 +56,17 @@ The discriminator gets colored images from both generator and original data alon
   <img src='img/cgan.png' />
 </p>
 
+## Networks Architecture
+The architecture of generator is the same as  [U-Net](https://arxiv.org/abs/1505.04597):  5 encoding units and 5 decoding units. The contracting path has the typical architecture of a convolutional networks: 3x3 convolution layers, each followed by batch normalization, leaky rectified linear unit (leaky ReLU) activation function and 2x2 max pooling operation with stride 2 for downsampling. The number of channels are doubled after each downsampling step. Each unit in the expansive path consists of an upsampling layer, followed by a 2x2 convolution layer that halves the number of channels, concatenation with the activation map of the mirroring layer in the contracting path, and two 3x3 convolution layers each followed by batch normalization and ReLU activation function. The last layer of the network is a 1x1 convolution which is equivalent to cross-channel parametric pooling layer. The number of channels in the output layer is 3 with L*a*b* color space.
+<p align='center'>  
+  <img src='img/unet.png' width='600px' height='388px' />
+</p>
+
+For discriminator, we use a conventional convolutional neural network classifier architecture: a series of 3x3 convolutional layers followed by max-pooling layer with the number of channels being doubled after each downsampling. All convolution layers are followed by batch normalization, leaky ReLU activation with slope 0.2 and dropout with a dropout rate of 20% to prevent the discriminator from overfitting. After the last layer, a convolution is applied to map to a 1 dimensional output, followed by a sigmoid function to return a probability value of the input being real or fake. 
+<p align='center'>  
+  <img src='img/discriminator.png' width='510px' height='190px' />
+</p>
+  
 ## Places365 Results
 Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
 <p align='center'>  
