@@ -35,3 +35,13 @@ The L*a*b* color space can be viewed as a three dimensional space with L*, a*, b
 <p align='center'>  
   <img src='img/LAB.png' width='298px' height='263px' />
 </p>
+
+### Generative Adversarial Network
+Since colorization is a class of image translation problems, the architectures of the generator and discriminator both follow a multilayer perceptron model. The generator is trained to minimize the probability that the discriminator makes a correct prediction in generated data, while discriminator is trained to maximize the probability of assigning the correct label. This is presented as a single minimax game problem with the value function V (G, D):
+<p align='center'>  
+  <img src='img/gan.png' />
+</p>
+In our model, we have decided to use an alternate cost function for the generator. In the above equation, the cost function is defined by minimizing the probability of the discriminator being correct. However, this approach presents two issues: 1) If the discriminator performs well during training stages, the generator will have a near-zero gradient during back-propagation. This will tremendously slow down convergence rate because the generator will continue to produce similar results during training. 2) The original cost function is a strictly decreasing function that is unbounded below. This will cause the cost function to diverge to negative infinity during the minimization procedure. To address the above issues, we have redefined the generator's cost function by maximizing the probability of the discriminator being mistaken, as opposed to minimizing the probability of the discriminator being correct. In addition, the cost function was further modified by adding an L1 based regularizer. This will theoretically preserve the structure of the original images and prevent the generator from assigning arbitrary colors to pixels just to fool the discriminator:
+<p align='center'>  
+  <img src='img/gan_new.png' />
+</p>
