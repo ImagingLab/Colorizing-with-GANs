@@ -1,8 +1,8 @@
 # Image Colorization with Generative Adversarial Networks 
 This repository explores the method of colorization using generative adversarial networks (GANs).
-We are trainig two convolutional networks to as suggested by [Pix2Pix](https://github.com/phillipi/pix2pix).
+The colorization is done using two convolutional networks to as suggested by [Pix2Pix](https://github.com/phillipi/pix2pix).
 
-The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu) and its results will be compared with those obtained using existing convolutional neural networks (CNN).
+The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu). Some of the test results from Places365 dataset are shown [here](#Places365-Results)
 
 ## Prerequisites
 - Linux
@@ -70,5 +70,5 @@ For discriminator, we use a conventional convolutional neural network classifier
 ## Places365 Results
 Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
 <p align='center'>  
-  <img src='img/places365.png' />
+  <img src='img/places365.jpg' />
 </p>
