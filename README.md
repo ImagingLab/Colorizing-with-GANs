@@ -2,7 +2,7 @@
 This repository explores the method of colorization using generative adversarial networks (GANs).
 The colorization is done using two convolutional networks to as suggested by [Pix2Pix](https://github.com/phillipi/pix2pix).
 
-The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu). Some of the test results from Places365 dataset are shown [here](#Places365-Results)
+The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu). Some of the test results from Places365 dataset are [shown here](#places365-results)
 
 ## Prerequisites
 - Linux
