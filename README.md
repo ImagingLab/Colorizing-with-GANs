@@ -59,6 +59,17 @@ For discriminator, we use a conventional convolutional neural network classifier
   <img src='img/discriminator.png' width='510px' height='190px' />
 </p>
   
+## Citation
+If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1803.05400">Image Colorization with Generative Adversarial Networks</a>:
+
+```
+@article{colorgan2018,
+  title={Image Colorization with Generative Adversarial Networks},
+  author={Nazeri, Kamyar and Ng, Eric},
+  year={2018}
+}
+```
+  
 ## Places365 Results
 Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
 <p align='center'>  
