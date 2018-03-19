@@ -63,9 +63,10 @@ For discriminator, we use a conventional convolutional neural network classifier
 If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1803.05400">Image Colorization with Generative Adversarial Networks</a>:
 
 ```
-@article{colorgan2018,
+@article{nazeri2018image,
   title={Image Colorization with Generative Adversarial Networks},
   author={Nazeri, Kamyar and Ng, Eric},
+  journal={arXiv preprint arXiv:1803.05400},
   year={2018}
 }
 ```
