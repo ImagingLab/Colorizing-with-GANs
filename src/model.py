@@ -174,6 +174,15 @@ class ColorizationModel:
     def test(self):
         pass
 
+    def build(self):
+        pass
+
+    def generator(self):
+        pass
+
+    def discriminator(self):
+        pass
+
     def load(self):
         print('loading model...\n')
 
