@@ -17,7 +17,7 @@ def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
         mean_image = mean_image / np.float32(255)
         data = (data - mean_image) / np.float32(255)
 
-    data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
+data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
     data_RGB = data_RGB.reshape((data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
 
     if flip:

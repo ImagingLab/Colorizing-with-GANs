@@ -101,4 +101,6 @@ ENV/
 .mypy_cache/
 
 # custom
+.idea
+.vscode
 vcs.xml
