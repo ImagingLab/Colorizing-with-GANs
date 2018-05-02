@@ -1,9 +1,16 @@
-# -*- coding: utf-8 -*-
-#
-
+import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import color
+
+
+def preprocess(img):
+    # [0, 1] => [-1, 1]
+    return img * 2 - 1
+
+
+def postprocess(img):
+    return (img + 1) / 2
 
 
 def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
@@ -17,8 +24,10 @@ def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
         mean_image = mean_image / np.float32(255)
         data = (data - mean_image) / np.float32(255)
 
-data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
-    data_RGB = data_RGB.reshape((data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
+    data_RGB = np.dstack(
+        (data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
+    data_RGB = data_RGB.reshape(
+        (data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
 
     if flip:
         data_RGB = data_RGB[0:data_size, :, :, :]
@@ -33,7 +42,6 @@ data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:
         data_out = color.rgb2lab(data_RGB)
         data_gray = color.rgb2gray(data_RGB)[:, :, :, None]
         return data_out, data_gray  # returns LAB and grayscale as 4D tensor
-
 
 
 def show_yuv(yuv_original, yuv_pred):

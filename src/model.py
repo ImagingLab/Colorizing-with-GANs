@@ -1,4 +1,9 @@
+from __future__ import print_function
+
+import os
 import numpy as np
+import tensorflow as tf
+
 import keras.backend as K
 from keras import losses
 from keras.models import Model
@@ -82,7 +87,8 @@ def create_model_gen(input_shape, output_channels):
     merge9 = concatenate([conv1, up9], axis=3)
     conv9 = create_conv(64, (3, 3), merge9, 'conv9_1', activation='relu')
     conv9 = create_conv(64, (3, 3), conv9, 'conv9_2', activation='relu')
-    conv9 = Conv2D(output_channels, (1, 1), padding='same', name='conv9_3')(conv9)
+    conv9 = Conv2D(output_channels, (1, 1),
+                   padding='same', name='conv9_3')(conv9)
 
     model = Model(inputs=inputs, outputs=conv9, name='generator')
 
@@ -91,19 +97,24 @@ def create_model_gen(input_shape, output_channels):
 
 def create_model_dis(input_shape):
     inputs = Input(input_shape)
-    conv1 = create_conv(64, (3, 3), inputs, 'conv1', activation='leakyrelu', dropout=.8)
+    conv1 = create_conv(64, (3, 3), inputs, 'conv1',
+                        activation='leakyrelu', dropout=.8)
     pool1 = MaxPool2D((2, 2))(conv1)
 
-    conv2 = create_conv(128, (3, 3), pool1, 'conv2', activation='leakyrelu', dropout=.8)
+    conv2 = create_conv(128, (3, 3), pool1, 'conv2',
+                        activation='leakyrelu', dropout=.8)
     pool2 = MaxPool2D((2, 2))(conv2)
 
-    conv3 = create_conv(256, (3, 3), pool2, 'conv3', activation='leakyrelu', dropout=.8)
+    conv3 = create_conv(256, (3, 3), pool2, 'conv3',
+                        activation='leakyrelu', dropout=.8)
     pool3 = MaxPool2D((2, 2))(conv3)
 
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4', activation='leakyrelu', dropout=.8)
+    conv4 = create_conv(512, (3, 3), pool3, 'conv4',
+                        activation='leakyrelu', dropout=.8)
     pool4 = MaxPool2D((2, 2))(conv4)
 
-    conv5 = create_conv(512, (3, 3), pool4, 'conv5', activation='leakyrelu', dropout=.8)
+    conv5 = create_conv(512, (3, 3), pool4, 'conv5',
+                        activation='leakyrelu', dropout=.8)
 
     flat = Flatten()(conv5)
     dense6 = Dense(1, activation='sigmoid')(flat)
@@ -127,13 +138,15 @@ def create_model_gan(input_shape, generator, discriminator):
 def create_models(input_shape_gen, input_shape_dis, output_channels, lr, momentum, loss_weights):
     optimizer = Adam(lr=lr, beta_1=momentum)
 
-    model_gen = create_model_gen(input_shape=input_shape_gen, output_channels=output_channels)
+    model_gen = create_model_gen(
+        input_shape=input_shape_gen, output_channels=output_channels)
     model_gen.compile(loss=losses.mean_absolute_error, optimizer=optimizer)
 
     model_dis = create_model_dis(input_shape=input_shape_dis)
     model_dis.trainable = False
 
-    model_gan = create_model_gan(input_shape=input_shape_gen, generator=model_gen, discriminator=model_dis)
+    model_gan = create_model_gan(
+        input_shape=input_shape_gen, generator=model_gen, discriminator=model_dis)
     model_gan.compile(
         loss=[losses.binary_crossentropy, l1],
         metrics=[eacc, 'accuracy'],
@@ -145,3 +158,35 @@ def create_models(input_shape_gen, input_shape_dis, output_channels, lr, momentu
     model_dis.compile(loss=losses.binary_crossentropy, optimizer=optimizer)
 
     return model_gen, model_dis, model_gan
+
+
+class ColorizationModel:
+    def __init__(self, sess, options):
+        self.sess = sess
+        self.name = 'COLGAN_' + options.dataset
+        self.saver = tf.train.Saver()
+        self.path = os.path.join(options.checkpoint_path, self.name)
+        self.global_step = tf.Variable(0, name='global_step', trainable=False)
+
+    def train(self):
+        pass
+
+    def test(self):
+        pass
+
+    def load(self):
+        print('loading model...\n')
+
+        ckpt = tf.train.get_checkpoint_state(self.path)
+
+        if ckpt and ckpt.model_checkpoint_path:
+            self.saver.restore(self.sess, self.path)
+            return True
+
+        else:
+            print("failed to find a checkpoint")
+            return False
+
+    def save(self):
+        print('saving model...\n')
+        self.saver.save(self.sess, self.path, global_step=self.global_step)

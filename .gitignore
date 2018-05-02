@@ -101,6 +101,7 @@ ENV/
 .mypy_cache/
 
 # custom
+checkpoints
+vcs.xml
 .idea
 .vscode
-vcs.xml
