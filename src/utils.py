@@ -1,10 +1,11 @@
-import tensorflow as tf
+import pickle
 import numpy as np
+import tensorflow as tf
 import matplotlib.pyplot as plt
 from skimage import color
 
 
-def preprocess(img, color='RGB'):
+def preprocess(img, color='LAB'):
     if color == 'RGB':
         img = img * 2 - 1                       # [0, 1] => [-1, 1]
 
@@ -16,7 +17,7 @@ def preprocess(img, color='RGB'):
     return img
 
 
-def postprocess(img, color='RGB'):
+def postprocess(img, color='LAB'):
     if color == 'RGB':
         img = (img + 1) / 2
 
@@ -28,7 +29,7 @@ def postprocess(img, color='RGB'):
     return img
 
 
-def imshow(original, pred, color='RGB'):
+def imshow(original, pred, color='LAB'):
     if color == 'RGB':
         grey = color.rgb2grey(original)
 
@@ -52,3 +53,9 @@ def imshow(original, pred, color='RGB'):
     plt.imshow(pred)
 
     plt.show()
+
+
+def unpickle(file):
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo, encoding='bytes')
+    return dict
