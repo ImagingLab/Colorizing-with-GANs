@@ -17,9 +17,15 @@ class BaseDataset():
         self._data = []
 
     def __len__(self):
+        """
+        Retunrs the length of the dataset
+        """
         return len(self.data) * (2 if self.flip else 1)
 
     def __iter__(self):
+        """
+        Iterates over dataset items
+        """
         while True:
             item = self[self.current]
             self.current += 1
@@ -30,6 +36,9 @@ class BaseDataset():
             yield item
 
     def __getitem__(self, index):
+        """
+        Retrieves an item from dataset by its index
+        """
         ix = int(index / 2)
         val = self.data[ix]
         img = imread(val) if isinstance(val, str) else val
@@ -90,8 +99,7 @@ class PlacesDataset(BaseDataset):
 
     def load(self):
         if self.training:
-            data = np.array(
-                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+            data = np.array(glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))

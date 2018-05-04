@@ -3,6 +3,9 @@ import tensorflow as tf
 
 
 def conv2d(inputs, filters, kernel_size=(4, 4), strides=(2, 2), bnorm=True, activation=tf.nn.relu):
+    """
+    Creates a conv2D block
+    """
     initializer = tf.random_normal_initializer(0, 0.02)
     res = tf.layers.conv2d(
         inputs=inputs,
@@ -20,6 +23,9 @@ def conv2d(inputs, filters, kernel_size=(4, 4), strides=(2, 2), bnorm=True, acti
 
 
 def conv2d_transpose(inputs, filters, kernel_size=(4, 4), strides=(2, 2), bnorm=True, activation=tf.nn.relu):
+    """
+    Creates a conv2D-transpose block
+    """
     initializer = tf.random_normal_initializer(0, 0.02)
     res = tf.layers.conv2d_transpose(
         inputs=inputs,
@@ -37,4 +43,7 @@ def conv2d_transpose(inputs, filters, kernel_size=(4, 4), strides=(2, 2), bnorm=
 
 
 def pixelwise_accuracy(y_true, y_pred):
+    """
+    Measures the accuracy of the colorization process by comparing pixels
+    """
     return tf.reduce_mean(tf.equal(tf.round(y_true), tf.round(y_pred)))
