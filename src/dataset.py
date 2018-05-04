@@ -8,9 +8,9 @@ from utils import unpickle, preprocess
 
 
 class BaseDataset():
-    def __init__(self, path, training=True, color='LAB', flip=True):
+    def __init__(self, path, training=True, colorspace='LAB', flip=True):
         self.flip = flip
-        self.color = color
+        self.colorspace = colorspace
         self.current = 0
         self.training = training
         self.path = path
@@ -31,12 +31,16 @@ class BaseDataset():
 
     def __getitem__(self, index):
         ix = int(index / 2)
-        img = imread(self.data[ix])
+        val = self.data[ix]
+        img = imread(val) if isinstance(val, str) else val
 
         if index % 2 != 0:
-            img = img[:, :, ::-1]
+            img = img[:, ::-1, :]
 
-        return preprocess(img, self.color)
+        if self.colorspace == 'LAB':
+            img = color.rgb2lab(img)
+
+        return preprocess(img, self.colorspace)
 
     @property
     def data(self):
@@ -52,8 +56,8 @@ class BaseDataset():
 
 
 class Cifar10Dataset(BaseDataset):
-    def __init__(self, path, training=True, color='LAB', flip=True):
-        super(Cifar10Dataset, self).__init__(path, training, color, flip)
+    def __init__(self, path, training=True, colorspace='LAB', flip=True):
+        super(Cifar10Dataset, self).__init__(path, training, colorspace, flip)
 
     def load(self):
         if self.training:
@@ -74,12 +78,13 @@ class Cifar10Dataset(BaseDataset):
 
 
 class PlacesDataset(BaseDataset):
-    def __init__(self, path, training=True, color='LAB', flip=True):
-        super(PlacesDataset, self).__init__(path, training, color, flip)
+    def __init__(self, path, training=True, colorspace='LAB', flip=True):
+        super(PlacesDataset, self).__init__(path, training, colorspace, flip)
 
     def load(self):
         if self.training:
-            data = np.array(glob.glob(self.path + '/data_256/*.jpg'))
+            data = np.array(
+                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))

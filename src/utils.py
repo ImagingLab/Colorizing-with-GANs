@@ -1,39 +1,38 @@
 import pickle
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
 from skimage import color
 
 
-def preprocess(img, color='LAB'):
-    if color == 'RGB':
-        img = img * 2 - 1                       # [0, 1] => [-1, 1]
+def preprocess(img, colorspace='LAB'):
+    if colorspace == 'RGB':
+        img = (img / 255.0) * 2 - 1                 # [0, 1] => [-1, 1]
 
-    elif color == 'LAB':
-        img = tf.identity(img)
-        img[:, :, 0] = img[:, :, 0:] / 50 - 1   # L: [0, 100] => [-1, 1]
-        img[::, :, 0] = img[:, :, 0:] / 110     # A, B: [-110, 110] => [-1, 1]
+    elif colorspace == 'LAB':
+        img = np.copy(img)
+        img[:, :, :0] = img[:, :, :0] / 50 - 1      # L: [0, 100] => [-1, 1]
+        img[:, :, 0:] = img[:, :, 0:] / 110         # A, B: [-110, 110] => [-1, 1]
 
     return img
 
 
-def postprocess(img, color='LAB'):
-    if color == 'RGB':
+def postprocess(img, colorspace='LAB'):
+    if colorspace == 'RGB':
         img = (img + 1) / 2
 
-    elif color == 'LAB':
-        img = tf.identity(img)
-        img[0, :, :] = img[0, :, :] / 50 - 1    # [0, 100] => [-1, 1]
-        img[0:, :, :] = img[0:, :, :] / 110     # [-110, 110] => [-1, 1]
+    elif colorspace == 'LAB':
+        img = np.copy(img)
+        img[:, :, :0] = (img[:, :, :0] + 1) * 50    # [0, 100] => [-1, 1]
+        img[:, :, 0:] = img[:, :, 0:] * 110         # [-110, 110] => [-1, 1]
 
     return img
 
 
-def imshow(original, pred, color='LAB'):
-    if color == 'RGB':
+def imshow(original, pred, colorspace='LAB'):
+    if colorspace == 'RGB':
         grey = color.rgb2grey(original)
 
-    elif color == 'LAB':
+    elif colorspace == 'LAB':
         original = np.clip(color.lab2rgb(original), 0, 1)
         pred = np.clip(np.abs(color.lab2rgb(pred)), 0, 1)
         grey = color.rgb2grey(original)
