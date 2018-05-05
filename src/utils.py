@@ -25,7 +25,7 @@ def preprocess(img, colorspace=COLORSPACE_LAB):
         img = (img / 255.0) * 2 - 1                 # [0, 1] => [-1, 1]
 
     elif colorspace == COLORSPACE_LAB:
-        img = np.copy(img)
+        img = rgb2lab(img)
         img[:, :, :0] = img[:, :, :0] / 50 - 1      # L: [0, 100] => [-1, 1]
         img[:, :, 0:] = img[:, :, 0:] / 110         # A, B: [-110, 110] => [-1, 1]
 
@@ -41,7 +41,7 @@ def postprocess(img, colorspace=COLORSPACE_LAB):
         img[:, :, :0] = (img[:, :, :0] + 1) * 50    # [0, 100] => [-1, 1]
         img[:, :, 0:] = img[:, :, 0:] * 110         # [-110, 110] => [-1, 1]
 
-    return img
+    return lab2rgb(img)
 
 
 def imshow(original, pred, colorspace=COLORSPACE_LAB):

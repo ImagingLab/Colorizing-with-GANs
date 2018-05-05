@@ -20,7 +20,8 @@ class ModelOptions:
         parser.add_argument("--l1-weight", type=float, default=100.0, help="weight on L1 term for generator gradient (default: 100.0)")
         parser.add_argument("--gan-weight", type=float, default=1.0, help="weight on GAN term for generator gradient (default: 1.0)")
         parser.add_argument('--augment', type=bool, default=True, help='True for augmentation (default: True)')
-        parser.add_argument('--log-interval', type=int, default=100, help='how many batches to wait before logging training status (default: 50)')
+        parser.add_argument('--save-interval', type=int, default=1000, help='how many batches to wait before saving model (default: 1000)')
+        parser.add_argument('--log-interval', type=int, default=100, help='how many batches to wait before logging training status (default: 100)')
         parser.add_argument('--gpu-ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--debug', type=int, default=0, help='debugging (default: 0)')
 

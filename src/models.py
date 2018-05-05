@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import time
 import numpy as np
 import tensorflow as tf
 
@@ -21,27 +22,41 @@ class BaseModel:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
 
     def train(self):
+        start_time = time.time()
         dataset = self.create_dataset(True)
+        total = len(dataset)
 
         for epoch in range(self.options.epochs):
-            counter = 0
+            batch_counter = 0
             generator = dataset.generator(self.options.batch_size)
 
-            for color_images in generator:
-                counter += self.options.batch_size
-                gray_images = rgb2gray(color_images)
+            for input_color in generator:
+                batch_counter += 1
+                input_gray = rgb2gray(input_color)
+                input_color = preprocess(input_color, self.options.color_space)
 
-                if self.options.color_space == COLORSPACE_LAB:
-                    color_images = rgb2lab(color_images)
+                gen_feed_dic = {self.input_color: input_color}
+                dis_feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
-                self.sess.run([self.dis_train], feed_dict={})
-                self.sess.run([self.gen_train], feed_dict={})
+                self.sess.run([self.dis_train], feed_dict=dis_feed_dic)
+                self.sess.run([self.gen_train], feed_dict=gen_feed_dic)
 
-                errD_fake = self.dis_loss_fake.eval({})
-                errD_real = self.dis_loss_real.eval({})
-                errG = self.gen_loss.eval({})
+                errD_fake = self.dis_loss_fake.eval(feed_dict=gen_feed_dic)
+                errD_real = self.dis_loss_real.eval(feed_dict=dis_feed_dic)
+                errG = self.gen_loss.eval(feed_dict=gen_feed_dic)
 
-            self.save()
+                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f"
+                      % (epoch, batch_counter * self.options.batch_size, total, time.time() - start_time, errD_fake + errD_real, errG))
+
+
+                # log model at checkpoints
+                if batch_counter % self.options.log_interval == 0 and batch_counter > 0:
+                    self.sample()
+
+
+                # save model at checkpoints
+                if batch_counter % self.options.save_interval == 0 and batch_counter > 0:
+                    self.save()
 
     def test(self):
         dataset = self.create_dataset(False)
@@ -52,12 +67,14 @@ class BaseModel:
         dis = self.create_discriminator()
         sce = tf.nn.sigmoid_cross_entropy_with_logits
 
-        self.gen = gen.create()
-        self.dis = dis.create()
-        self.gan = dis.create(gen_out, reuse_variables=True)
-        self.sampler = gen.create(z_placeholder, reuse_variables=True)
+        self.input_gray = tf.placeholder(tf.float32, shape=(None, None, None, 1), name='input_gray')
+        self.input_color = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_color')
 
-        #tf.concat([color_inputs, grayscale_inputs], axis=3)
+        self.gen = gen.create(inputs=self.input_gray)
+        self.sam = gen.create(inputs=self.input_gray, reuse_variables=True)
+        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
+        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True)
+
 
         self.gen_loss = tf.reduce_mean(sce(logits=self.gen, labels=tf.ones_like(self.gen)))
         self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * 0.9))
@@ -93,6 +110,9 @@ class BaseModel:
     def save(self):
         print('saving model...\n')
         self.saver.save(self.sess, self.path, global_step=self.global_step)
+
+    def sample(self):
+        pass
 
     @abstractmethod
     def create_generator(self):
@@ -191,3 +211,18 @@ class Places365Model(BaseModel):
             path=self.options.dataset_path,
             training=training,
             augment=self.options.augment)
+
+
+def model_factory(sess, options):
+    if options.dataset == CIFAR10_DATASET:
+        model = Cifar10Model(sess, options)
+
+    elif options.dataset == PLACES365_DATASET:
+        model = Places365Model(sess, options)
+
+    if not os.path.exists(model.path):
+        os.makedirs(model.path)
+    else:
+        model.load()
+
+    return model

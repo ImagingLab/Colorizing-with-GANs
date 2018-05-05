@@ -14,15 +14,10 @@ np.random.seed(options.seed)
 random.seed(options.seed)
 
 
+# create a session environment
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    model = ColorizationModel(sess, options)
-
-    # loading model
-    if not os.path.exists(model.path):
-        os.makedirs(model.path)
-    else:
-        model.load()
+    model = model_factory(sess, options)
 
     if options.train:
         model.train()
