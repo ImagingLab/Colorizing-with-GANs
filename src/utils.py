@@ -8,6 +8,18 @@ COLORSPACE_RGB = 'RGB'
 COLORSPACE_LAB = 'LAB'
 
 
+def rgb2lab(img):
+    return color.rgb2lab(img)
+
+
+def lab2rgb(img):
+    return color.lab2rgb(img)
+
+
+def rgb2gray(img):
+    return color.rgb2gray(img)
+
+
 def preprocess(img, colorspace=COLORSPACE_LAB):
     if colorspace == COLORSPACE_RGB:
         img = (img / 255.0) * 2 - 1                 # [0, 1] => [-1, 1]
@@ -35,12 +47,12 @@ def postprocess(img, colorspace=COLORSPACE_LAB):
 
 def imshow(original, pred, colorspace=COLORSPACE_LAB):
     if colorspace == COLORSPACE_RGB:
-        grey = color.rgb2grey(original)
+        grey = rgb2gray(original)
 
     elif colorspace == COLORSPACE_LAB:
-        original = np.clip(color.lab2rgb(original), 0, 1)
-        pred = np.clip(np.abs(color.lab2rgb(pred)), 0, 1)
-        grey = color.rgb2grey(original)
+        original = np.clip(lab2rgb(original), 0, 1)
+        pred = np.clip(np.abs(lab2rgb(pred)), 0, 1)
+        grey = rgb2gray(original)
 
     fig = plt.figure()
 

@@ -9,7 +9,7 @@ class Discriminator(object):
         self.kernels = kernels
         self.var_list = []
 
-    def __call__(self, input, reuse_variables=None):
+    def create(self, input, reuse_variables=None):
         output = input
         with tf.variable_scope(self.name, reuse=reuse_variables) as scope:
             for index, kernel in enumerate(self.kernels):
@@ -25,8 +25,9 @@ class Discriminator(object):
                     activation=tf.nn.leaky_relu
                 )
 
-                if kernel['dropout']:
-                    output = tf.nn.dropout(output, keep_prob=0.5)
+                if kernel['dropout'] > 0:
+                    output = tf.nn.dropout(
+                        output, keep_prob=1 - kernel['dropout'])
 
             output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
             output = tf.layers.dense(inputs=output, units=1)
@@ -45,7 +46,7 @@ class Generator(object):
         self.output_channels = output_channels
         self.var_list = []
 
-    def __call__(self, input, reuse_variables=None):
+    def create(self, input, reuse_variables=None):
         output = input
 
         with tf.variable_scope(self.name, reuse=reuse_variables) as scope:
@@ -65,14 +66,16 @@ class Generator(object):
 
                 layers.append(output)
 
-                if kernel['dropout']:
-                    output = tf.nn.dropout(output, keep_prob=0.5)
+                if kernel['dropout'] > 0:
+                    output = tf.nn.dropout(
+                        output, keep_prob=1 - kernel['dropout'])
 
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
 
                 if index > 0:
-                    output = tf.concat([output, layers[len(layers) - index - 1]], axis=3)
+                    output = tf.concat(
+                        [output, layers[len(layers) - index - 1]], axis=3)
 
                 output = conv2d_transpose(
                     inputs=output,

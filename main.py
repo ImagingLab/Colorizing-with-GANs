@@ -24,7 +24,6 @@ with tf.Session() as sess:
     else:
         model.load()
 
-
     if options.train:
         model.train()
     else:

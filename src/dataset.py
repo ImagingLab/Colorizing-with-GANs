@@ -1,16 +1,17 @@
-import os
 import abc
 import glob
 import numpy as np
 from scipy.misc import imread
-from skimage import color
-from utils import unpickle, preprocess
+from .utils import unpickle
+
+CIFAR10_DATASET = 'cifar10'
+PLACES365_DATASET = 'places365'
 
 
 class BaseDataset():
-    def __init__(self, path, training=True, colorspace='LAB', flip=True):
+    def __init__(self, name, path, training=True, flip=True):
+        self.name = name
         self.flip = flip
-        self.colorspace = colorspace
         self.current = 0
         self.training = training
         self.path = path
@@ -46,10 +47,7 @@ class BaseDataset():
         if index % 2 != 0:
             img = img[:, ::-1, :]
 
-        if self.colorspace == 'LAB':
-            img = color.rgb2lab(img)
-
-        return preprocess(img, self.colorspace)
+        return img
 
     @property
     def data(self):
@@ -65,8 +63,8 @@ class BaseDataset():
 
 
 class Cifar10Dataset(BaseDataset):
-    def __init__(self, path, training=True, colorspace='LAB', flip=True):
-        super(Cifar10Dataset, self).__init__(path, training, colorspace, flip)
+    def __init__(self, CIFAR10_DATASET, path, training=True, flip=True):
+        super(Cifar10Dataset, self).__init__(path, training, flip)
 
     def load(self):
         data = []
@@ -93,13 +91,14 @@ class Cifar10Dataset(BaseDataset):
         return data
 
 
-class PlacesDataset(BaseDataset):
-    def __init__(self, path, training=True, colorspace='LAB', flip=True):
-        super(PlacesDataset, self).__init__(path, training, colorspace, flip)
+class Places365Dataset(BaseDataset):
+    def __init__(self, PLACES365_DATASET, path, training=True, flip=True):
+        super(Places365Dataset, self).__init__(path, training, flip)
 
     def load(self):
         if self.training:
-            data = np.array(glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+            data = np.array(
+                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))

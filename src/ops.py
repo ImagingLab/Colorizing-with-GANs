@@ -51,7 +51,7 @@ def pixelwise_accuracy(y_true, y_pred):
     return tf.reduce_mean(tf.equal(tf.round(y_true), tf.round(y_pred)))
 
 
-def kernel(filters, strides=2, dropout=False):
+def kernel(filters, strides=2, dropout=0.0):
     return {
         'filters': filters,
         'strides': strides,

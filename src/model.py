@@ -1,168 +1,17 @@
 from __future__ import print_function
 
-import os
 import numpy as np
 import tensorflow as tf
 
-import keras.backend as K
-from keras import losses
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.layers import Input
-from keras.layers import MaxPool2D
-from keras.layers import Activation
-from keras.layers import BatchNormalization
-from keras.layers import UpSampling2D
-from keras.layers import LeakyReLU
-from keras.layers import Conv2D
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import Flatten
-from keras.layers import concatenate
-
-
-def eacc(y_true, y_pred):
-    return K.mean(K.equal(K.round(y_true), K.round(y_pred)))
-
-
-def l1(y_true, y_pred):
-    return K.mean(K.abs(y_pred - y_true))
-
-
-def create_conv(filters, kernel_size, inputs, name=None, bn=True, dropout=0., padding='same', activation='relu'):
-    conv = Conv2D(filters, kernel_size, padding=padding,
-                  kernel_initializer='he_normal', name=name)(inputs)
-
-    if bn:
-        conv = BatchNormalization()(conv)
-
-    if activation == 'relu':
-        conv = Activation(activation)(conv)
-    elif activation == 'leakyrelu':
-        conv = LeakyReLU()(conv)
-
-    if dropout != 0:
-        conv = Dropout(dropout)(conv)
-
-    return conv
-
-
-def create_model_gen(input_shape, output_channels):
-    inputs = Input(input_shape)
-    conv1 = create_conv(64, (3, 3), inputs, 'conv1_1', activation='leakyrelu')
-    conv1 = create_conv(64, (3, 3), conv1, 'conv1_2', activation='leakyrelu')
-    pool1 = MaxPool2D((2, 2))(conv1)
-
-    conv2 = create_conv(128, (3, 3), pool1, 'conv2_1', activation='leakyrelu')
-    conv2 = create_conv(128, (3, 3), conv2, 'conv2_2', activation='leakyrelu')
-    pool2 = MaxPool2D((2, 2))(conv2)
-
-    conv3 = create_conv(256, (3, 3), pool2, 'conv3_1', activation='leakyrelu')
-    conv3 = create_conv(256, (3, 3), conv3, 'conv3_2', activation='leakyrelu')
-    pool3 = MaxPool2D((2, 2))(conv3)
-
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4_1', activation='leakyrelu')
-    conv4 = create_conv(512, (3, 3), conv4, 'conv4_2', activation='leakyrelu')
-    pool4 = MaxPool2D((2, 2))(conv4)
-
-    conv5 = create_conv(1024, (3, 3), pool4, 'conv5_1', activation='leakyrelu')
-    conv5 = create_conv(1024, (3, 3), conv5, 'conv5_2', activation='leakyrelu')
-
-    up6 = create_conv(512, (2, 2), UpSampling2D((2, 2))(conv5), 'up6')
-    merge6 = concatenate([conv4, up6], axis=3)
-    conv6 = create_conv(512, (3, 3), merge6, 'conv6_1', activation='relu')
-    conv6 = create_conv(512, (3, 3), conv6, 'conv6_2', activation='relu')
-
-    up7 = create_conv(256, (2, 2), UpSampling2D((2, 2))(conv6), 'up7')
-    merge7 = concatenate([conv3, up7], axis=3)
-    conv7 = create_conv(256, (3, 3), merge7, 'conv7_1', activation='relu')
-    conv7 = create_conv(256, (3, 3), conv7, 'conv7_2', activation='relu')
-
-    up8 = create_conv(128, (2, 2), UpSampling2D((2, 2))(conv7), 'up8')
-    merge8 = concatenate([conv2, up8], axis=3)
-    conv8 = create_conv(128, (3, 3), merge8, 'conv8_1', activation='relu')
-    conv8 = create_conv(128, (3, 3), conv8, 'conv8_2', activation='relu')
-
-    up9 = create_conv(64, (2, 2), UpSampling2D((2, 2))(conv8))
-    merge9 = concatenate([conv1, up9], axis=3)
-    conv9 = create_conv(64, (3, 3), merge9, 'conv9_1', activation='relu')
-    conv9 = create_conv(64, (3, 3), conv9, 'conv9_2', activation='relu')
-    conv9 = Conv2D(output_channels, (1, 1),
-                   padding='same', name='conv9_3')(conv9)
-
-    model = Model(inputs=inputs, outputs=conv9, name='generator')
-
-    return model
-
-
-def create_model_dis(input_shape):
-    inputs = Input(input_shape)
-    conv1 = create_conv(64, (3, 3), inputs, 'conv1',
-                        activation='leakyrelu', dropout=.8)
-    pool1 = MaxPool2D((2, 2))(conv1)
-
-    conv2 = create_conv(128, (3, 3), pool1, 'conv2',
-                        activation='leakyrelu', dropout=.8)
-    pool2 = MaxPool2D((2, 2))(conv2)
-
-    conv3 = create_conv(256, (3, 3), pool2, 'conv3',
-                        activation='leakyrelu', dropout=.8)
-    pool3 = MaxPool2D((2, 2))(conv3)
-
-    conv4 = create_conv(512, (3, 3), pool3, 'conv4',
-                        activation='leakyrelu', dropout=.8)
-    pool4 = MaxPool2D((2, 2))(conv4)
-
-    conv5 = create_conv(512, (3, 3), pool4, 'conv5',
-                        activation='leakyrelu', dropout=.8)
-
-    flat = Flatten()(conv5)
-    dense6 = Dense(1, activation='sigmoid')(flat)
-
-    model = Model(inputs=inputs, outputs=dense6, name='discriminator')
-
-    return model
-
-
-def create_model_gan(input_shape, generator, discriminator):
-    input = Input(input_shape)
-
-    gen_out = generator(input)
-    dis_out = discriminator(concatenate([gen_out, input], axis=3))
-
-    model = Model(inputs=[input], outputs=[dis_out, gen_out], name='dcgan')
-
-    return model
-
-
-def create_models(input_shape_gen, input_shape_dis, output_channels, lr, momentum, loss_weights):
-    optimizer = Adam(lr=lr, beta_1=momentum)
-
-    model_gen = create_model_gen(
-        input_shape=input_shape_gen, output_channels=output_channels)
-    model_gen.compile(loss=losses.mean_absolute_error, optimizer=optimizer)
-
-    model_dis = create_model_dis(input_shape=input_shape_dis)
-    model_dis.trainable = False
-
-    model_gan = create_model_gan(
-        input_shape=input_shape_gen, generator=model_gen, discriminator=model_dis)
-    model_gan.compile(
-        loss=[losses.binary_crossentropy, l1],
-        metrics=[eacc, 'accuracy'],
-        loss_weights=loss_weights,
-        optimizer=optimizer
-    )
-
-    model_dis.trainable = True
-    model_dis.compile(loss=losses.binary_crossentropy, optimizer=optimizer)
-
-    return model_gen, model_dis, model_gan
+from .dataset import *
+from .ops import pixelwise_accuracy, kernel
+from .networks import Generator, Discriminator
 
 
 class ColorizationModel:
     def __init__(self, sess, options):
         self.sess = sess
+        self.options = options
         self.name = 'COLGAN_' + options.dataset
         self.saver = tf.train.Saver()
         self.path = os.path.join(options.checkpoint_path, self.name)
@@ -175,13 +24,110 @@ class ColorizationModel:
         pass
 
     def build(self):
-        pass
+        gen, dis, gan = self.create_models()
+        #tf.concat([color_inputs, grayscale_inputs], axis=3)
 
-    def generator(self):
-        pass
+    def create_models(self):
 
-    def discriminator(self):
-        pass
+        kernels_gen_encoder = []
+        kernels_gen_decoder = []
+        kernels_dis = []
+
+        # load kernels
+        if self.options.dataset == CIFAR10_DATASET:
+            kernels_gen_encoder = [
+                # encoder_1: [batch, 32, 32, ch] => [batch, 32, 32, 64]
+                kernel(64, 1, 0),
+                # encoder_2: [batch, 32, 32, 64] => [batch, 16, 16, 128]
+                kernel(128, 2, 0),
+                # encoder_3: [batch, 16, 16, 128] => [batch, 8, 8, 256]
+                kernel(256, 2, 0),
+                # encoder_4: [batch, 8, 8, 256] => [batch, 4, 4, 512]
+                kernel(512, 2, 0),
+                # encoder_5: [batch, 4, 4, 512] => [batch, 2, 2, 512]
+                kernel(512, 2, 0)
+            ]
+
+            kernels_gen_decoder = [
+                # decoder_1: [batch, 2, 2, 512] => [batch, 4, 4, 512]
+                kernel(512, 2, 0.5),
+                # decoder_2: [batch, 4, 4, 512] => [batch, 8, 8, 256]
+                kernel(256, 2, 0),
+                # decoder_3: [batch, 8, 8, 256] => [batch, 16, 16, 128]
+                kernel(128, 2, 0),
+                # decoder_4: [batch, 16, 16, 128] => [batch, 32, 32, 512]
+                kernel(64, 2, 0)
+            ]
+
+            kernels_dis = [
+                # layer_1: [batch, 32, 32, ch] => [batch, 16, 16, 64]
+                kernel(64, 2, 0),
+                # layer_2: [batch, 16, 16, 64] => [batch, 8, 8, 128]
+                kernel(128, 2, 0),
+                # layer_3: [batch, 8, 8, 128] => [batch, 4, 4, 256]
+                kernel(256, 2, 0),
+                # layer_4: [batch, 4, 4, 256] => [batch, 4, 4, 512]
+                kernel(512, 1, 0)
+            ]
+
+        elif self.options.dataset == PLACES365_DATASET:
+            kernels_gen_encoder = [
+                # encoder_1: [batch, 256, 256, ch] => [batch, 256, 256, 64]
+                kernel(64, 1, 0),
+                # encoder_2: [batch, 256, 256, 64] => [batch, 128, 128, 64]
+                kernel(64, 2, 0),
+                # encoder_3: [batch, 128, 128, 64] => [batch, 64, 64, 128]
+                kernel(128, 2, 0),
+                # encoder_4: [batch, 64, 64, 128] => [batch, 32, 32, 256]
+                kernel(256, 2, 0),
+                # encoder_5: [batch, 32, 32, 256] => [batch, 16, 16, 512]
+                kernel(512, 2, 0),
+                # encoder_6: [batch, 16, 16, 512] => [batch, 8, 8, 512]
+                kernel(512, 2, 0),
+                # encoder_7: [batch, 8, 8, 512] => [batch, 4, 4, 512]
+                kernel(512, 2, 0),
+                # encoder_8: [batch, 4, 4, 512] => [batch, 2, 2, 512]
+                kernel(512, 2, 0)
+            ]
+
+            kernels_gen_decoder = [
+                # decoder_1: [batch, 2, 2, 512] => [batch, 4, 4, 512]
+                kernel(512, 2, 0.5),
+                # decoder_2: [batch, 4, 4, 512] => [batch, 8, 8, 512]
+                kernel(512, 2, 0.5),
+                # decoder_3: [batch, 8, 8, 512] => [batch, 16, 16, 512]
+                kernel(512, 2, 0.5),
+                # decoder_4: [batch, 16, 16, 512] => [batch, 32, 32, 256]
+                kernel(256, 2, 0),
+                # decoder_5: [batch, 32, 32, 256] => [batch, 64, 64, 128]
+                kernel(128, 2, 0),
+                # decoder_6: [batch, 64, 64, 128] => [batch, 128, 128, 64]
+                kernel(64, 2, 0),
+                # decoder_7: [batch, 128, 128, 64] => [batch, 256, 256, 64]
+                kernel(64, 2, 0)
+            ]
+
+            kernels_dis = [
+                # layer_1: [batch, 256, 256, ch] => [batch, 128, 128, 64]
+                kernel(64, 2, 0),
+                # layer_2: [batch, 128, 128, 64] => [batch, 64, 64, 128]
+                kernel(128, 2, 0),
+                # layer_3: [batch, 64, 64, 128] => [batch, 32, 32, 256]
+                kernel(256, 2, 0),
+                # layer_4: [batch, 32, 32, 256] => [batch, 16, 16, 512]
+                kernel(512, 2, 0),
+                # layer_5: [batch, 16, 16, 512] => [batch, 8, 8, 512]
+                kernel(512, 2, 0),
+                # layer_6: [batch, 8, 8, 512] => [batch, 4, 4, 512]
+                kernel(512, 2, 0)
+            ]
+
+        # create model factories
+        gen = Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
+        dis = Discriminator('dis', kernels_dis)
+        gan = Discriminator('gan', kernels_dis)
+
+        return gen, dis, gan
 
     def load(self):
         print('loading model...\n')
