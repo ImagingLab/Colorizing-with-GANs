@@ -19,15 +19,15 @@ class Discriminator(object):
                 output = conv2d(
                     inputs=output,
                     name='conv' + str(index),
-                    filters=kernel['filters'],
-                    strides=kernel['strides'],
+                    filters=kernel[0],
+                    strides=kernel[1],
                     bnorm=bnorm,
                     activation=tf.nn.leaky_relu
                 )
 
-                if kernel['dropout'] > 0:
+                if kernel[2] > 0:
                     output = tf.nn.dropout(
-                        output, keep_prob=1 - kernel['dropout'])
+                        output, keep_prob=1 - kernel[2])
 
             output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
             output = tf.layers.dense(inputs=output, units=1)
@@ -59,16 +59,16 @@ class Generator(object):
                 output = conv2d(
                     inputs=output,
                     name='conv' + str(index),
-                    filters=kernel['filters'],
-                    strides=kernel['strides'],
+                    filters=kernel[0],
+                    strides=kernel[1],
                     activation=tf.nn.leaky_relu
                 )
 
                 layers.append(output)
 
-                if kernel['dropout'] > 0:
+                if kernel[2] > 0:
                     output = tf.nn.dropout(
-                        output, keep_prob=1 - kernel['dropout'])
+                        output, keep_prob=1 - kernel[2])
 
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
@@ -100,3 +100,4 @@ class Generator(object):
                 tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
 
             return output
+            

@@ -1,53 +1,58 @@
-import abc
 import glob
 import numpy as np
+import tensorflow as tf
 from scipy.misc import imread
-from .utils import unpickle
+from abc import abstractmethod
+from .utils import *
 
 CIFAR10_DATASET = 'cifar10'
 PLACES365_DATASET = 'places365'
 
 
 class BaseDataset():
-    def __init__(self, name, path, training=True, flip=True):
+    def __init__(self, name, path, training=True, augment=True):
         self.name = name
-        self.flip = flip
-        self.current = 0
+        self.augment = augment
         self.training = training
         self.path = path
         self._data = []
 
     def __len__(self):
-        """
-        Retunrs the length of the dataset
-        """
-        return len(self.data) * (2 if self.flip else 1)
+        return len(self.data)
 
     def __iter__(self):
-        """
-        Iterates over dataset items
-        """
-        while True:
-            item = self[self.current]
-            self.current += 1
+        total = len(self)
+        start = 0
 
-            if self.current == len(self):
-                self.current = 0
-
+        while start < total:
+            item = self[start]
+            start += 1
             yield item
 
+        raise StopIteration
+
     def __getitem__(self, index):
-        """
-        Retrieves an item from dataset by its index
-        """
         ix = int(index / 2)
         val = self.data[ix]
         img = imread(val) if isinstance(val, str) else val
 
-        if index % 2 != 0:
-            img = img[:, ::-1, :]
+        if self.augment:
+            img = tf.image.random_flip_left_right(img)
 
         return img
+
+    def generator(self, batch_size):
+        total = len(self)
+        start = 0
+
+        while start < total:
+            end = np.min([start + batch_size, total])
+            items = np.array(self[item] for item in range(start, end))
+            start = end
+            yield items
+
+        raise StopIteration
+
 
     @property
     def data(self):
@@ -57,14 +62,14 @@ class BaseDataset():
 
         return self._data
 
-    @abc.abstractmethod
+    @abstractmethod
     def load(self):
         return []
 
 
 class Cifar10Dataset(BaseDataset):
-    def __init__(self, CIFAR10_DATASET, path, training=True, flip=True):
-        super(Cifar10Dataset, self).__init__(path, training, flip)
+    def __init__(self, path, training=True, augment=True):
+        super(Cifar10Dataset, self).__init__(path, CIFAR10_DATASET, training, augment)
 
     def load(self):
         data = []
@@ -92,8 +97,8 @@ class Cifar10Dataset(BaseDataset):
 
 
 class Places365Dataset(BaseDataset):
-    def __init__(self, PLACES365_DATASET, path, training=True, flip=True):
-        super(Places365Dataset, self).__init__(path, training, flip)
+    def __init__(self, path, training=True, augment=True):
+        super(Places365Dataset, self).__init__(path, PLACES365_DATASET, training, augment)
 
     def load(self):
         if self.training:
