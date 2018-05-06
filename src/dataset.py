@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.misc import imread
 from abc import abstractmethod
-from .utils import *
+from .utils import unpickle
 
 CIFAR10_DATASET = 'cifar10'
 PLACES365_DATASET = 'places365'
@@ -18,7 +18,7 @@ class BaseDataset():
         self._data = []
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) * (2 if self.augment else 1)
 
     def __iter__(self):
         total = len(self)
@@ -36,8 +36,8 @@ class BaseDataset():
         val = self.data[ix]
         img = imread(val) if isinstance(val, str) else val
 
-        if self.augment:
-            img = tf.image.random_flip_left_right(img)
+        if index % 2 != 0:
+            img = img[:, ::-1, :]
 
         return img
 
@@ -47,7 +47,7 @@ class BaseDataset():
 
         while start < total:
             end = np.min([start + batch_size, total])
-            items = np.array(self[item] for item in range(start, end))
+            items = np.array([self[item] for item in range(start, end)])
             start = end
             yield items
 
@@ -103,7 +103,8 @@ class Places365Dataset(BaseDataset):
     def load(self):
         if self.training:
             data = np.array(
-                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+                #glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+                glob.glob(self.path + '/val_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))

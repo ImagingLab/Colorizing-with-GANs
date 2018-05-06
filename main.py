@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 import tensorflow as tf
-from src import *
+from src import ModelOptions, model_factory
 
 # read input arguments
 options = ModelOptions().parse()
@@ -16,8 +16,8 @@ random.seed(options.seed)
 
 # create a session environment
 with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
     model = model_factory(sess, options)
+    sess.run(tf.global_variables_initializer())
 
     if options.train:
         model.train()

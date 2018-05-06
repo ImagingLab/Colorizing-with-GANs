@@ -6,10 +6,11 @@ import numpy as np
 import tensorflow as tf
 
 from abc import abstractmethod
-from .dataset import *
 from .ops import pixelwise_accuracy
 from .networks import Generator, Discriminator
+from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
+from .utils import preprocess, postprocess, rgb2gray, imshow
 
 
 class BaseModel:
@@ -36,23 +37,22 @@ class BaseModel:
 
             for input_color in generator:
                 batch_counter += 1
-                input_gray = rgb2gray(input_color)
+                input_gray = rgb2gray(input_color)[:, :, :, None]
                 input_color = preprocess(input_color, self.options.color_space)
 
-                gen_feed_dic = {self.input_color: input_color}
-                dis_feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
+                feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
-                self.sess.run([self.dis_train, self.accuracy], feed_dict=dis_feed_dic)
-                self.sess.run([self.gen_train, self.accuracy], feed_dict=gen_feed_dic)
-                self.sess.run([self.gen_train, self.accuracy], feed_dict=gen_feed_dic)
+                self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
+                self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
+                self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
-                errD_fake = self.dis_loss_fake.eval(feed_dict=gen_feed_dic)
-                errD_real = self.dis_loss_real.eval(feed_dict=dis_feed_dic)
-                errG_l1 = self.gen_loss_l1.eval(feed_dict=gen_feed_dic)
-                errG_gan = self.gen_loss_gan.eval(feed_dict=gen_feed_dic)
-                acc = self.accuracy.eval(feed_dict=gen_feed_dic)
+                errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
+                errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+                errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
+                errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
+                acc = self.accuracy.eval(feed_dict=feed_dic)
 
-                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.8f, G total loss: %.8f, G L1: %.8f, G gan: %.8f, accuracy: %.8f" % (
+                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f, G total loss: %.4f, G L1: %.4f, G gan: %.4f, accuracy: %.2f" % (
                     epoch,
                     batch_counter * self.options.batch_size,
                     total,
@@ -115,17 +115,17 @@ class BaseModel:
         self.input_gray = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], 1), name='input_gray')
         self.input_color = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_color')
 
-        self.gen = gen.create(inputs=self.input_gray)
         self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
+        self.gen = gen.create(inputs=self.input_gray)
         self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True)
         self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
 
 
         self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis)))
-        self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gen, labels=tf.zeros_like(self.gen)))
+        self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gan, labels=tf.zeros_like(self.gan)))
         self.dis_loss = self.dis_loss_real + self.dis_loss_fake
 
-        self.gen_loss_gan = tf.reduce_mean(sce(logits=self.gen, labels=tf.ones_like(self.gen)))
+        self.gen_loss_gan = tf.reduce_mean(sce(logits=self.gan, labels=tf.ones_like(self.gan)))
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen))
         self.gen_loss = self.gen_loss_gan + self.options.l1_weight * self.gen_loss_l1
 
@@ -147,17 +147,14 @@ class BaseModel:
         self.saver = tf.train.Saver()
 
     def load(self):
-        print('loading model...\n')
-
         ckpt = tf.train.get_checkpoint_state(self.path)
 
-        if ckpt and ckpt.model_checkpoints_path:
+        if ckpt is not None:
+            print('loading model...\n')
             self.saver.restore(self.sess, self.path)
             return True
 
-        else:
-            print("failed to find a checkpoint")
-            return False
+        return False
 
     def save(self):
         print('saving model...\n')
@@ -284,4 +281,5 @@ def model_factory(sess, options):
     else:
         model.load()
 
+    model.build()
     return model

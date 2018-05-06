@@ -13,7 +13,7 @@ class ModelOptions:
         parser.add_argument('--dataset-path', type=str, default='./dataset',  help='dataset path (default: ./dataset)')
         parser.add_argument('--checkpoints-path', type=str, default='./checkpoints', help='models are saved here (default: ./checkpoints)')
         parser.add_argument('--samples-path', type=str, default='./samples', help='samples are saved here (default: ./samples)')
-        parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='input batch size for training (default: 64)')
+        parser.add_argument('--batch-size', type=int, default=32, metavar='N', help='input batch size for training (default: 32)')
         parser.add_argument('--color-space', type=str, default='lab',  help='model color space [lab, yuv, rgb] (default: lab)')
         parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train (default: 30)')
         parser.add_argument('--lr', type=float, default=2e-4, metavar='LR', help='learning rate (default: 2e-4)')
