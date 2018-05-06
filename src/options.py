@@ -33,6 +33,9 @@ class ModelOptions:
         if opt.seed == 0:
             opt.seed = random.randint(0, 2**31 - 1)
 
+        if opt.dataset_path == './dataset':
+            opt.dataset_path += ('/' + opt.dataset)
+
         args = vars(opt)
         print('\n------------ Options -------------')
         for k, v in sorted(args.items()):

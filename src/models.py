@@ -17,13 +17,16 @@ class BaseModel:
         self.sess = sess
         self.options = options
         self.name = 'COLGAN_' + options.dataset
-        self.saver = tf.train.Saver()
-        self.path = os.path.join(options.checkpoint_path, self.name)
+        self.path = os.path.join(options.checkpoints_path, self.name)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
+        self._built = False
 
     def train(self):
+        if not self._built:
+            self.build()
+
         start_time = time.time()
         total = len(self.dataset_train)
 
@@ -50,13 +53,13 @@ class BaseModel:
                 acc = self.accuracy.eval(feed_dict=gen_feed_dic)
 
                 print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.8f, G total loss: %.8f, G L1: %.8f, G gan: %.8f, accuracy: %.8f" % (
-                    epoch, 
+                    epoch,
                     batch_counter * self.options.batch_size,
-                    total, 
-                    time.time() - start_time, 
-                    errD_fake + errD_real, 
-                    errG_l1 + errG_gan, 
-                    errG_l1, 
+                    total,
+                    time.time() - start_time,
+                    errD_fake + errD_real,
+                    errG_l1 + errG_gan,
+                    errG_l1,
                     errG_gan,
                     acc)
                 )
@@ -72,6 +75,9 @@ class BaseModel:
                     self.save()
 
     def test(self):
+        if not self._built:
+            self.build()
+
         generator = self.dataset_test.generator(1)
         for real_image in generator:
             input_gray = rgb2gray(real_image)
@@ -81,6 +87,9 @@ class BaseModel:
             imshow(input_color, fake_image, self.options.color_space)
 
     def sample(self):
+        if not self._built:
+            self.build()
+
         sample_size = 16
         generator = self.dataset_test.generator(sample_size)
         real_images = next(generator)
@@ -90,15 +99,21 @@ class BaseModel:
         fake_images = postprocess(fake_images, self.options.color_space)
         # save images
 
-
     def build(self):
+        if self._built:
+            return
+
+        self._built = True
+
         # create models
         gen = self.create_generator()
         dis = self.create_discriminator()
         sce = tf.nn.sigmoid_cross_entropy_with_logits
 
-        self.input_gray = tf.placeholder(tf.float32, shape=(None, None, None, 1), name='input_gray')
-        self.input_color = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_color')
+        input_shape = self.get_input_shape()
+
+        self.input_gray = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], 1), name='input_gray')
+        self.input_color = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_color')
 
         self.gen = gen.create(inputs=self.input_gray)
         self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
@@ -129,12 +144,14 @@ class BaseModel:
             beta1=self.options.beta1
         ).minimize(self.dis_loss, var_list=dis.var_list, global_step=self.global_step)
 
+        self.saver = tf.train.Saver()
+
     def load(self):
         print('loading model...\n')
 
         ckpt = tf.train.get_checkpoint_state(self.path)
 
-        if ckpt and ckpt.model_checkpoint_path:
+        if ckpt and ckpt.model_checkpoints_path:
             self.saver.restore(self.sess, self.path)
             return True
 
@@ -145,6 +162,10 @@ class BaseModel:
     def save(self):
         print('saving model...\n')
         self.saver.save(self.sess, self.path, global_step=self.global_step)
+
+    @abstractmethod
+    def get_input_shape(self):
+        raise NotImplementedError
 
     @abstractmethod
     def create_generator(self):
@@ -162,6 +183,9 @@ class BaseModel:
 class Cifar10Model(BaseModel):
     def __init__(self, sess, options):
         super(Cifar10Model, self).__init__(sess, options)
+
+    def get_input_shape(self):
+        return (32, 32, 3)
 
     def create_generator(self):
         kernels_gen_encoder = [
@@ -201,6 +225,9 @@ class Cifar10Model(BaseModel):
 class Places365Model(BaseModel):
     def __init__(self, sess, options):
         super(Places365Model, self).__init__(sess, options)
+
+    def get_input_shape(self):
+        return (256, 256, 3)
 
     def create_generator(self):
         kernels_gen_encoder = [

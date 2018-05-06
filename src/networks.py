@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from ops import conv2d, conv2d_transpose, pixelwise_accuracy
+from .ops import conv2d, conv2d_transpose, pixelwise_accuracy
 
 
 class Discriminator(object):
@@ -16,9 +16,10 @@ class Discriminator(object):
 
                 # not use batch-norm in the first layer
                 bnorm = False if index == 0 else True
+                name = 'conv' + str(index)
                 output = conv2d(
                     inputs=output,
-                    name='conv' + str(index),
+                    name=name,
                     filters=kernel[0],
                     strides=kernel[1],
                     bnorm=bnorm,
@@ -26,8 +27,7 @@ class Discriminator(object):
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(
-                        output, keep_prob=1 - kernel[2])
+                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name)
 
             output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
             output = tf.layers.dense(inputs=output, units=1)
@@ -56,9 +56,10 @@ class Generator(object):
             # encoder branch
             for index, kernel in enumerate(self.encoder_kernels):
 
+                name = 'conv' + str(index)
                 output = conv2d(
                     inputs=output,
-                    name='conv' + str(index),
+                    name=name,
                     filters=kernel[0],
                     strides=kernel[1],
                     activation=tf.nn.leaky_relu
@@ -67,8 +68,7 @@ class Generator(object):
                 layers.append(output)
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(
-                        output, keep_prob=1 - kernel[2])
+                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name)
 
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
@@ -77,16 +77,17 @@ class Generator(object):
                     output = tf.concat(
                         [output, layers[len(layers) - index - 1]], axis=3)
 
+                name = 'deconv' + str(index)
                 output = conv2d_transpose(
                     inputs=output,
-                    name='deconv' + str(index),
-                    filters=kernel['filters'],
-                    strides=kernel['strides'],
+                    name=name,
+                    filters=kernel[0],
+                    strides=kernel[1],
                     activation=tf.nn.relu
                 )
 
-                if kernel['dropout']:
-                    output = tf.nn.dropout(output, keep_prob=0.5)
+                if kernel[2] > 0:
+                    output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name)
 
             output = conv2d(
                 inputs=output,
@@ -100,4 +101,3 @@ class Generator(object):
                 tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
 
             return output
-            

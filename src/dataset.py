@@ -69,7 +69,7 @@ class BaseDataset():
 
 class Cifar10Dataset(BaseDataset):
     def __init__(self, path, training=True, augment=True):
-        super(Cifar10Dataset, self).__init__(path, CIFAR10_DATASET, training, augment)
+        super(Cifar10Dataset, self).__init__(CIFAR10_DATASET, path, training, augment)
 
     def load(self):
         data = []
@@ -98,7 +98,7 @@ class Cifar10Dataset(BaseDataset):
 
 class Places365Dataset(BaseDataset):
     def __init__(self, path, training=True, augment=True):
-        super(Places365Dataset, self).__init__(path, PLACES365_DATASET, training, augment)
+        super(Places365Dataset, self).__init__(PLACES365_DATASET, path, training, augment)
 
     def load(self):
         if self.training:
