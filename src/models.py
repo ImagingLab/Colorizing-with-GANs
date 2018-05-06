@@ -20,15 +20,16 @@ class BaseModel:
         self.saver = tf.train.Saver()
         self.path = os.path.join(options.checkpoint_path, self.name)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
+        self.dataset_train = self.create_dataset(True)
+        self.dataset_test = self.create_dataset(False)
 
     def train(self):
         start_time = time.time()
-        dataset = self.create_dataset(True)
-        total = len(dataset)
+        total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
             batch_counter = 0
-            generator = dataset.generator(self.options.batch_size)
+            generator = self.dataset_train.generator(self.options.batch_size)
 
             for input_color in generator:
                 batch_counter += 1
@@ -59,7 +60,24 @@ class BaseModel:
                     self.save()
 
     def test(self):
-        dataset = self.create_dataset(False)
+        generator = self.dataset_test.generator(1)
+        for real_image in generator:
+            input_gray = rgb2gray(real_image)
+            input_color = preprocess(real_image, self.options.color_space)
+            fake_image = self.sess.run(self.sampler, feed_dict={self.input_color: input_color, self.input_gray: input_gray})
+            fake_image = postprocess(fake_image, self.options.color_space)
+            imshow(input_color, fake_image, self.options.color_space)
+
+    def sample(self):
+        sample_size = 16
+        generator = self.dataset_test.generator(sample_size)
+        real_images = next(generator)
+        inputs_gray = rgb2gray(real_images)
+        inputs_color = preprocess(real_images, self.options.color_space)
+        fake_images = self.sess.run(self.sampler, feed_dict={self.input_color: inputs_color, self.input_gray: inputs_gray})
+        fake_images = postprocess(fake_images, self.options.color_space)
+        # save images
+
 
     def build(self):
         # create models
@@ -71,9 +89,9 @@ class BaseModel:
         self.input_color = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_color')
 
         self.gen = gen.create(inputs=self.input_gray)
-        self.sam = gen.create(inputs=self.input_gray, reuse_variables=True)
         self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
         self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True)
+        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
 
 
         self.gen_loss = tf.reduce_mean(sce(logits=self.gen, labels=tf.ones_like(self.gen)))
@@ -110,9 +128,6 @@ class BaseModel:
     def save(self):
         print('saving model...\n')
         self.saver.save(self.sess, self.path, global_step=self.global_step)
-
-    def sample(self):
-        pass
 
     @abstractmethod
     def create_generator(self):
