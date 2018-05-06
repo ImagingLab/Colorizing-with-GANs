@@ -39,15 +39,27 @@ class BaseModel:
                 gen_feed_dic = {self.input_color: input_color}
                 dis_feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
-                self.sess.run([self.dis_train], feed_dict=dis_feed_dic)
-                self.sess.run([self.gen_train], feed_dict=gen_feed_dic)
+                self.sess.run([self.dis_train, self.accuracy], feed_dict=dis_feed_dic)
+                self.sess.run([self.gen_train, self.accuracy], feed_dict=gen_feed_dic)
+                self.sess.run([self.gen_train, self.accuracy], feed_dict=gen_feed_dic)
 
                 errD_fake = self.dis_loss_fake.eval(feed_dict=gen_feed_dic)
                 errD_real = self.dis_loss_real.eval(feed_dict=dis_feed_dic)
-                errG = self.gen_loss.eval(feed_dict=gen_feed_dic)
+                errG_l1 = self.gen_loss_l1.eval(feed_dict=gen_feed_dic)
+                errG_gan = self.gen_loss_gan.eval(feed_dict=gen_feed_dic)
+                acc = self.accuracy.eval(feed_dict=gen_feed_dic)
 
-                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, d_loss: %.8f, g_loss: %.8f"
-                      % (epoch, batch_counter * self.options.batch_size, total, time.time() - start_time, errD_fake + errD_real, errG))
+                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.8f, G total loss: %.8f, G L1: %.8f, G gan: %.8f, accuracy: %.8f" % (
+                    epoch, 
+                    batch_counter * self.options.batch_size,
+                    total, 
+                    time.time() - start_time, 
+                    errD_fake + errD_real, 
+                    errG_l1 + errG_gan, 
+                    errG_l1, 
+                    errG_gan,
+                    acc)
+                )
 
 
                 # log model at checkpoints
@@ -102,6 +114,7 @@ class BaseModel:
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen))
         self.gen_loss = self.gen_loss_gan + self.options.l1_weight * self.gen_loss_l1
 
+        self.accuracy = pixelwise_accuracy(self.input_color, self.gen)
 
 
         # generator optimizaer
@@ -114,7 +127,7 @@ class BaseModel:
         self.dis_train = tf.train.AdamOptimizer(
             learning_rate=self.options.lr,
             beta1=self.options.beta1
-        ).minimize(self.dis_loss, var_list=dis.var_list)
+        ).minimize(self.dis_loss, var_list=dis.var_list, global_step=self.global_step)
 
     def load(self):
         print('loading model...\n')
