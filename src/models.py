@@ -94,10 +94,14 @@ class BaseModel:
         self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
 
 
-        self.gen_loss = tf.reduce_mean(sce(logits=self.gen, labels=tf.ones_like(self.gen)))
         self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * 0.9))
         self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gen, labels=tf.zeros_like(self.gen)))
         self.dis_loss = self.dis_loss_real + self.dis_loss_fake
+
+        self.gen_loss_gan = tf.reduce_mean(sce(logits=self.gen, labels=tf.ones_like(self.gen)))
+        self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen))
+        self.gen_loss = self.gen_loss_gan + self.options.l1_weight * self.gen_loss_l1
+
 
 
         # generator optimizaer
