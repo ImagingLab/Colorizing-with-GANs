@@ -121,7 +121,7 @@ class BaseModel:
         self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
 
 
-        self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * 0.9))
+        self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis)))
         self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gen, labels=tf.zeros_like(self.gen)))
         self.dis_loss = self.dis_loss_real + self.dis_loss_fake
 

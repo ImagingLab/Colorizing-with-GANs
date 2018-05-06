@@ -73,10 +73,6 @@ class Generator(object):
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
 
-                if index > 0:
-                    output = tf.concat(
-                        [output, layers[len(layers) - index - 1]], axis=3)
-
                 name = 'deconv' + str(index)
                 output = conv2d_transpose(
                     inputs=output,
@@ -89,10 +85,13 @@ class Generator(object):
                 if kernel[2] > 0:
                     output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name)
 
+                output = tf.concat([output, layers[len(layers) - index - 2]], axis=3)
+
             output = conv2d(
                 inputs=output,
                 name='conv_last',
                 filters=self.output_channels,
+                strides=1,
                 bnorm=False,
                 activation=tf.nn.tanh
             )
