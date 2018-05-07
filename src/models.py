@@ -67,37 +67,26 @@ class BaseModel:
 
                 # log model at checkpoints
                 if batch_counter % self.options.log_interval == 0 and batch_counter > 0:
-                    self.sample()
+                    self.test()
 
 
                 # save model at checkpoints
                 if batch_counter % self.options.save_interval == 0 and batch_counter > 0:
                     self.save()
 
-    def test(self):
+    def test(self, show=True):
         if not self._built:
             self.build()
 
-        generator = self.dataset_test.generator(1)
+        generator = self.dataset_test.generator(1, 5)
         for real_image in generator:
-            input_gray = rgb2gray(real_image)
+            input_gray = rgb2gray(real_image)[:, :, :, None]
             input_color = preprocess(real_image, self.options.color_space)
-            fake_image = self.sess.run(self.sampler, feed_dict={self.input_color: input_color, self.input_gray: input_gray})
+            feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
+
+            fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
             fake_image = postprocess(fake_image, self.options.color_space)
-            imshow(input_color, fake_image, self.options.color_space)
-
-    def sample(self):
-        if not self._built:
-            self.build()
-
-        sample_size = 16
-        generator = self.dataset_test.generator(sample_size)
-        real_images = next(generator)
-        inputs_gray = rgb2gray(real_images)
-        inputs_color = preprocess(real_images, self.options.color_space)
-        fake_images = self.sess.run(self.sampler, feed_dict={self.input_color: inputs_color, self.input_gray: inputs_gray})
-        fake_images = postprocess(fake_images, self.options.color_space)
-        # save images
+            imshow(real_image[0], fake_image[0])
 
     def build(self):
         if self._built:
@@ -126,8 +115,8 @@ class BaseModel:
         self.dis_loss = self.dis_loss_real + self.dis_loss_fake
 
         self.gen_loss_gan = tf.reduce_mean(sce(logits=self.gan, labels=tf.ones_like(self.gan)))
-        self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen))
-        self.gen_loss = self.gen_loss_gan + self.options.l1_weight * self.gen_loss_l1
+        self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen)) * self.options.l1_weight
+        self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
         self.accuracy = pixelwise_accuracy(self.input_color, self.gen)
 

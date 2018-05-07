@@ -12,7 +12,7 @@ PLACES365_DATASET = 'places365'
 class BaseDataset():
     def __init__(self, name, path, training=True, augment=True):
         self.name = name
-        self.augment = augment
+        self.augment = augment and training
         self.training = training
         self.path = path
         self._data = []
@@ -41,9 +41,9 @@ class BaseDataset():
 
         return img
 
-    def generator(self, batch_size):
-        total = len(self)
+    def generator(self, batch_size, total=-1):
         start = 0
+        total = len(self) if total == -1 else total
 
         while start < total:
             end = np.min([start + batch_size, total])
@@ -103,8 +103,7 @@ class Places365Dataset(BaseDataset):
     def load(self):
         if self.training:
             data = np.array(
-                #glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
-                glob.glob(self.path + '/val_256/**/*.jpg', recursive=True))
+                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
