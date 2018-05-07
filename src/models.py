@@ -1,3 +1,4 @@
+
 from __future__ import print_function
 
 import os
@@ -17,8 +18,8 @@ class BaseModel:
     def __init__(self, sess, options):
         self.sess = sess
         self.options = options
-        self.name = 'COLGAN_' + options.dataset
-        self.path = os.path.join(options.checkpoints_path, self.name)
+        self.name = 'CGAN_' + options.dataset
+        self.checkpoints_dir = os.path.join(options.checkpoints_path, options.dataset)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
@@ -26,8 +27,7 @@ class BaseModel:
         self._built = False
 
     def train(self):
-        if not self._built:
-            self.build()
+        self.build()
 
         start_time = time.time()
         total = len(self.dataset_train)
@@ -56,7 +56,7 @@ class BaseModel:
                 
 
                 print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f, G total loss: %.4f, G L1: %.4f, G gan: %.4f, accuracy: %.2f" % (
-                    epoch,
+                    epoch + 1,
                     batch_counter * self.options.batch_size,
                     total,
                     time.time() - start_time,
@@ -78,8 +78,7 @@ class BaseModel:
                     self.save()
 
     def test(self, show=True):
-        if not self._built:
-            self.build()
+        self.build()
 
         generator = self.dataset_test.generator(32)
         real_image = next(generator)
@@ -149,18 +148,19 @@ class BaseModel:
         self.saver = tf.train.Saver()
 
     def load(self):
-        ckpt = tf.train.get_checkpoint_state(self.path)
-
+        ckpt = tf.train.get_checkpoint_state(self.checkpoints_dir)
+        
         if ckpt is not None:
             print('loading model...\n')
-            self.saver.restore(self.sess, self.path)
+            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
+            self.saver.restore(self.sess, os.path.join(self.checkpoints_dir, ckpt_name))
             return True
 
         return False
 
     def save(self):
         print('saving model...\n')
-        self.saver.save(self.sess, self.path, global_step=self.global_step)
+        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), global_step=self.global_step)
 
     @abstractmethod
     def get_input_shape(self):
@@ -278,10 +278,9 @@ def model_factory(sess, options):
     elif options.dataset == PLACES365_DATASET:
         model = Places365Model(sess, options)
 
-    if not os.path.exists(model.path):
-        os.makedirs(model.path)
-    else:
-        model.load()
+    if not os.path.exists(model.checkpoints_dir):
+        os.makedirs(model.checkpoints_dir)
 
     model.build()
+    model.load()
     return model
