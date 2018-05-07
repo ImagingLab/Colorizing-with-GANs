@@ -63,12 +63,12 @@ def imshow(original, pred):
 
 def stitch_images(original, pred):
     # each row 4 images (2 original images followed by their predictions)
-    ROW = 4
+    ROW = 2
     width, height = original[0][:, :, 0].shape
-    img = Image.new('RGB', (width * ROW * 2, height * int(len(original) / ROW)))
+    img = Image.new('RGB', (width * ROW * 2 + 20, height * int(len(original) / ROW)))
 
     for ix in range(len(original)):
-        xoffset = int(ix % ROW) * width * 2
+        xoffset = int(ix % ROW) * width * 2 + int(ix % ROW) * 20
         yoffset = int(ix / ROW) * height
         im1 = Image.fromarray(original[ix])
         im2 = Image.fromarray((pred[ix] * 255).astype(np.uint8))

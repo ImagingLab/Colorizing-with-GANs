@@ -23,8 +23,9 @@ class BaseModel:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
-        self._iteration = 0
-        self._built = False
+        self.dataset_test_generator = self.dataset_test.generator(options.samples_size)
+        self.iteration = 0
+        self.is_built = False
 
     def train(self):
         self.build()
@@ -43,25 +44,31 @@ class BaseModel:
 
                 feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
-                self._iteration += batch_counter
+                self.iteration += batch_counter
                 self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
                 errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
                 errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+                errD = errD_fake + errD_real
+
                 errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
                 errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
-                acc = self.accuracy.eval(feed_dict=feed_dic)
-                
+                errG = errG_l1 + errG_gan
 
-                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f, G total loss: %.4f, G L1: %.4f, G gan: %.4f, accuracy: %.2f" % (
+                acc = self.accuracy.eval(feed_dict=feed_dic)
+
+
+                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
                     epoch + 1,
                     batch_counter * self.options.batch_size,
                     total,
                     time.time() - start_time,
-                    errD_fake + errD_real,
-                    errG_l1 + errG_gan,
+                    errD,
+                    errD_fake,
+                    errD_real,
+                    errG,
                     errG_l1,
                     errG_gan,
                     acc)
@@ -80,8 +87,7 @@ class BaseModel:
     def test(self, show=True):
         self.build()
 
-        generator = self.dataset_test.generator(32)
-        real_image = next(generator)
+        real_image = next(self.dataset_test_generator)
         input_gray = rgb2gray(real_image)[:, :, :, None]
         input_color = preprocess(real_image, self.options.color_space)
         feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
@@ -93,18 +99,19 @@ class BaseModel:
         if not os.path.exists(self.options.samples_path):
             os.makedirs(self.options.samples_path)
 
-        sample = self.options.dataset + "_" + str(self._iteration) + ".png"
-        print('Saving sample ' + sample)
-        img.save(os.path.join(self.options.samples_path, sample))
+        sample = self.options.dataset + "_" + str(self.iteration) + ".png"
         
         if show:
             img.show()
+        else:
+            print('Saving sample ' + sample)
+            img.save(os.path.join(self.options.samples_path, sample))
 
     def build(self):
-        if self._built:
+        if self.is_built:
             return
 
-        self._built = True
+        self.is_built = True
 
         # create models
         gen = self.create_generator()
@@ -149,7 +156,7 @@ class BaseModel:
 
     def load(self):
         ckpt = tf.train.get_checkpoint_state(self.checkpoints_dir)
-        
+
         if ckpt is not None:
             print('loading model...\n')
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
