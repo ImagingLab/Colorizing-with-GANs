@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+from PIL import Image
 import matplotlib.pyplot as plt
 from skimage import color
 
@@ -58,6 +59,23 @@ def imshow(original, pred):
     plt.imshow(pred)
 
     plt.show()
+
+
+def stitch_images(original, pred):
+    # each row 4 images (2 original images followed by their predictions)
+    ROW = 4
+    width, height = original[0][:, :, 0].shape
+    img = Image.new('RGB', (width * ROW * 2, height * int(len(original) / ROW)))
+
+    for ix in range(len(original)):
+        xoffset = int(ix % ROW) * width * 2
+        yoffset = int(ix / ROW) * height
+        im1 = Image.fromarray(original[ix])
+        im2 = Image.fromarray((pred[ix] * 255).astype(np.uint8))
+        img.paste(im1, (xoffset, yoffset))
+        img.paste(im2, (xoffset + width, yoffset))
+
+    return img
 
 
 def unpickle(file):

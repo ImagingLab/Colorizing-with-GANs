@@ -101,6 +101,7 @@ ENV/
 .mypy_cache/
 
 # custom
+samples
 checkpoints
 vcs.xml
 .idea

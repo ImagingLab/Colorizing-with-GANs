@@ -18,7 +18,7 @@ class BaseDataset():
         self._data = []
 
     def __len__(self):
-        return len(self.data) * (2 if self.augment else 1)
+        return len(self.data)
 
     def __iter__(self):
         total = len(self)
@@ -32,11 +32,10 @@ class BaseDataset():
         raise StopIteration
 
     def __getitem__(self, index):
-        ix = int(index / 2)
-        val = self.data[ix]
+        val = self.data[index]
         img = imread(val) if isinstance(val, str) else val
 
-        if index % 2 != 0:
+        if self.augment and np.random.binomial(1, 0.5) == 1:
             img = img[:, ::-1, :]
 
         return img
@@ -103,7 +102,8 @@ class Places365Dataset(BaseDataset):
     def load(self):
         if self.training:
             data = np.array(
-                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+                #glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+                glob.glob(self.path + '/val_256/**/*.jpg', recursive=True))
 
         else:
             data = np.array(glob.glob(self.path + '/val_256/*.jpg'))

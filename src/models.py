@@ -10,7 +10,7 @@ from .ops import pixelwise_accuracy
 from .networks import Generator, Discriminator
 from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
-from .utils import preprocess, postprocess, rgb2gray, imshow
+from .utils import preprocess, postprocess, rgb2gray, stitch_images
 
 
 class BaseModel:
@@ -22,6 +22,7 @@ class BaseModel:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
+        self._iteration = 0
         self._built = False
 
     def train(self):
@@ -42,6 +43,7 @@ class BaseModel:
 
                 feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
+                self._iteration += batch_counter
                 self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
@@ -51,6 +53,7 @@ class BaseModel:
                 errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
                 errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
                 acc = self.accuracy.eval(feed_dict=feed_dic)
+                
 
                 print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f, G total loss: %.4f, G L1: %.4f, G gan: %.4f, accuracy: %.2f" % (
                     epoch,
@@ -67,7 +70,7 @@ class BaseModel:
 
                 # log model at checkpoints
                 if batch_counter % self.options.log_interval == 0 and batch_counter > 0:
-                    self.test()
+                    self.test(show=False)
 
 
                 # save model at checkpoints
@@ -78,15 +81,25 @@ class BaseModel:
         if not self._built:
             self.build()
 
-        generator = self.dataset_test.generator(1, 5)
-        for real_image in generator:
-            input_gray = rgb2gray(real_image)[:, :, :, None]
-            input_color = preprocess(real_image, self.options.color_space)
-            feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
+        generator = self.dataset_test.generator(32)
+        real_image = next(generator)
+        input_gray = rgb2gray(real_image)[:, :, :, None]
+        input_color = preprocess(real_image, self.options.color_space)
+        feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
 
-            fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
-            fake_image = postprocess(fake_image, self.options.color_space)
-            imshow(real_image[0], fake_image[0])
+        fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
+        fake_image = postprocess(fake_image, self.options.color_space)
+        img = stitch_images(real_image, fake_image)
+
+        if not os.path.exists(self.options.samples_path):
+            os.makedirs(self.options.samples_path)
+
+        sample = self.options.dataset + "_" + str(self._iteration) + ".png"
+        print('Saving sample ' + sample)
+        img.save(os.path.join(self.options.samples_path, sample))
+        
+        if show:
+            img.show()
 
     def build(self):
         if self._built:

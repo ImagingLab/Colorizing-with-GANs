@@ -48,6 +48,11 @@ def pixelwise_accuracy(y_true, y_pred):
     """
     Measures the accuracy of the colorization process by comparing pixels
     """
-    pred = tf.equal(tf.round(y_true), tf.round(y_pred))
-    pred = tf.cast(pred, tf.int32)
+    pred = tf.equal(tf.round(postprocess_lab(y_true)), tf.round(postprocess_lab(y_pred)))
+    pred = tf.cast(pred, tf.float64)
     return tf.reduce_mean(pred)
+
+
+def postprocess_lab(lab):
+    L_chan, a_chan, b_chan = tf.unstack(lab, axis=3)
+    return tf.stack([(L_chan + 1) / 2 * 100, a_chan * 110, b_chan * 110], axis=3)
