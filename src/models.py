@@ -7,11 +7,12 @@ import numpy as np
 import tensorflow as tf
 
 from abc import abstractmethod
-from .ops import pixelwise_accuracy
 from .networks import Generator, Discriminator
 from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
-from .utils import preprocess, postprocess, rgb2gray, stitch_images
+from .ops import pixelwise_accuracy, preprocess, postprocess
+from .ops import COLORSPACE_RGB, COLORSPACE_LAB
+from .utils import stitch_images
 
 
 class BaseModel:
@@ -37,14 +38,11 @@ class BaseModel:
             batch_counter = 0
             generator = self.dataset_train.generator(self.options.batch_size)
 
-            for input_color in generator:
+            for input_rgb in generator:
                 batch_counter += 1
-                input_gray = rgb2gray(input_color)[:, :, :, None]
-                input_color = preprocess(input_color, self.options.color_space)
+                feed_dic = {self.input_rgb: input_rgb}
 
-                feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
-
-                self.iteration += batch_counter
+                self.iteration += 1
                 self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
@@ -59,9 +57,9 @@ class BaseModel:
 
                 acc = self.accuracy.eval(feed_dict=feed_dic)
 
-
-                print("Epoch: [%2d] [%4d/%4d] time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
+                print("epoch: %d iteration: %4d [%4d/%4d] time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
                     epoch + 1,
+                    self.iteration,
                     batch_counter * self.options.batch_size,
                     total,
                     time.time() - start_time,
@@ -87,20 +85,18 @@ class BaseModel:
     def test(self, show=True):
         self.build()
 
-        real_image = next(self.dataset_test_generator)
-        input_gray = rgb2gray(real_image)[:, :, :, None]
-        input_color = preprocess(real_image, self.options.color_space)
-        feed_dic = {self.input_color: input_color, self.input_gray: input_gray}
+        input_rgb = next(self.dataset_test_generator)
+        feed_dic = {self.input_rgb: input_rgb}
 
-        fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
-        fake_image = postprocess(fake_image, self.options.color_space)
-        img = stitch_images(real_image, fake_image)
+        fake_image, input_gray = self.sess.run([self.sampler, self.input_gray], feed_dict=feed_dic)
+        fake_image = postprocess(fake_image, colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
+        img = stitch_images(input_gray, input_rgb, fake_image.eval())
 
         if not os.path.exists(self.options.samples_path):
             os.makedirs(self.options.samples_path)
 
         sample = self.options.dataset + "_" + str(self.iteration) + ".png"
-        
+
         if show:
             img.show()
         else:
@@ -120,8 +116,9 @@ class BaseModel:
 
         input_shape = self.get_input_shape()
 
-        self.input_gray = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], 1), name='input_gray')
-        self.input_color = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_color')
+        self.input_rgb = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_rgb')
+        self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
+        self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
 
         self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
         self.gen = gen.create(inputs=self.input_gray)
@@ -137,7 +134,7 @@ class BaseModel:
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen)) * self.options.l1_weight
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
-        self.accuracy = pixelwise_accuracy(self.input_color, self.gen)
+        self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space)
 
 
         # generator optimizaer
