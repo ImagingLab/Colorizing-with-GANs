@@ -26,6 +26,7 @@ class BaseModel:
         self.dataset_test = self.create_dataset(False)
         self.dataset_test_generator = self.dataset_test.generator(options.samples_size)
         self.iteration = 0
+        self.epoch = 0
         self.is_built = False
 
     def train(self):
@@ -35,14 +36,14 @@ class BaseModel:
         total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
-            batch_counter = 0
+            self.epoch = epoch
+            self.iteration = 0
             generator = self.dataset_train.generator(self.options.batch_size)
 
             for input_rgb in generator:
-                batch_counter += 1
+                self.iteration += 1
                 feed_dic = {self.input_rgb: input_rgb}
 
-                self.iteration += 1
                 self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
@@ -60,7 +61,7 @@ class BaseModel:
                 print("epoch: %d iteration: %4d [%4d/%4d] time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
                     epoch + 1,
                     self.iteration,
-                    batch_counter * self.options.batch_size,
+                    self.iteration * self.options.batch_size,
                     total,
                     time.time() - start_time,
                     errD,
@@ -74,13 +75,15 @@ class BaseModel:
 
 
                 # log model at checkpoints
-                if batch_counter % self.options.log_interval == 0 and batch_counter > 0:
+                if self.iteration % self.options.log_interval == 0 and self.iteration > 0:
                     self.test(show=False)
 
 
                 # save model at checkpoints
-                if batch_counter % self.options.save_interval == 0 and batch_counter > 0:
+                if self.iteration % self.options.save_interval == 0 and self.iteration > 0:
                     self.save()
+
+            print('\n')
 
     def test(self, show=True):
         self.build()
@@ -95,7 +98,7 @@ class BaseModel:
         if not os.path.exists(self.options.samples_path):
             os.makedirs(self.options.samples_path)
 
-        sample = self.options.dataset + "_" + str(self.iteration) + ".png"
+        sample = self.options.dataset + "_" + str(self.epoch) + "_" + str(self.iteration) + ".png"
 
         if show:
             img.show()
