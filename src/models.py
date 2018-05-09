@@ -8,6 +8,9 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from abc import abstractmethod
+from tensorflow import keras
+from keras.utils import Progbar
+
 from .networks import Generator, Discriminator
 from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
@@ -35,6 +38,7 @@ class BaseModel:
 
         start_time = time.time()
         total = len(self.dataset_train)
+        progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
 
         for epoch in range(self.options.epochs):
             self.epoch = epoch
@@ -59,31 +63,28 @@ class BaseModel:
 
                 acc = self.accuracy.eval(feed_dict=feed_dic)
                 step = self.sess.run(self.global_step)
-
-                print("epoch: %d iteration: %4d [%4d/%4d] step: %d time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
-                    epoch + 1,
-                    self.iteration,
-                    self.iteration * self.options.batch_size,
-                    total,
-                    step,
-                    time.time() - start_time,
-                    errD,
-                    errD_fake,
-                    errD_real,
-                    errG,
-                    errG_l1,
-                    errG_gan,
-                    acc)
-                )
+                
+                progbar.add(len(input_rgb), values=[
+                    ("epoch", epoch + 1),
+                    ("iteration", self.iteration),
+                    ("step", step),
+                    ("D loss", errD),
+                    ("D fake", errD_fake),
+                    ("D real", errD_real),
+                    ("G loss", errG),
+                    ("G L1", errG_l1),
+                    ("G gan", errG_gan),
+                    ("accuracy", acc)
+                ])
 
 
                 # log model at checkpoints
-                if self.iteration % self.options.log_interval == 0 and self.iteration > 0:
+                if step % self.options.log_interval == 0:
                     self.sample(show=False)
 
 
                 # save model at checkpoints
-                if self.iteration % self.options.save_interval == 0 and self.iteration > 0:
+                if step % self.options.save_interval == 0:
                     self.save()
 
             print('\n')
