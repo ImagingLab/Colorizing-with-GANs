@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 
 
 def stitch_images(grayscale, original, pred):
-    # each row 6 images (3 original images followed by their predictions)
-    ROW = 2
     width, height = original[0][:, :, 0].shape
-    img = Image.new('RGB', (width * ROW * 3 + 10, height * int(len(original) / ROW)))
+    ROW = 2 if width > 200 else 4
+    img = Image.new('RGB', (width * ROW * 3 + 10 * (ROW - 1), height * int(len(original) / ROW)))
 
     grayscale = np.array(grayscale).squeeze()
     original = np.array(original)
