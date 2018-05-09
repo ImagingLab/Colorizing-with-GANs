@@ -1,97 +1,46 @@
-# -*- coding: utf-8 -*-
-
+import pickle
 import numpy as np
+from PIL import Image
 import matplotlib.pyplot as plt
-from skimage import color
 
 
-def preproc(data, normalize=False, flip=False, mean_image=None, outType='YUV'):
-    data_size = data.shape[0]
-    img_size = int(data.shape[1] / 3)
+def stitch_images(grayscale, original, pred):
+    width, height = original[0][:, :, 0].shape
+    ROW = 2 if width > 200 else 4
+    img = Image.new('RGB', (width * ROW * 3 + 10 * (ROW - 1), height * int(len(original) / ROW)))
 
-    if normalize:
-        if mean_image is None:
-            mean_image = np.mean(data)
+    grayscale = np.array(grayscale).squeeze()
+    original = np.array(original)
+    pred = np.array(pred)
 
-        mean_image = mean_image / np.float32(255)
-        data = (data - mean_image) / np.float32(255)
+    for ix in range(len(original)):
+        xoffset = int(ix % ROW) * width * 3 + int(ix % ROW) * 10
+        yoffset = int(ix / ROW) * height
+        im1 = Image.fromarray(grayscale[ix])
+        im2 = Image.fromarray(original[ix])
+        im3 = Image.fromarray((pred[ix] * 255).astype(np.uint8))
+        img.paste(im1, (xoffset, yoffset))
+        img.paste(im2, (xoffset + width, yoffset))
+        img.paste(im3, (xoffset + width + width, yoffset))
 
-    data_RGB = np.dstack((data[:, :img_size], data[:, img_size:2 * img_size], data[:, 2 * img_size:]))
-    data_RGB = data_RGB.reshape((data_size, int(np.sqrt(img_size)), int(np.sqrt(img_size)), 3))
-
-    if flip:
-        data_RGB = data_RGB[0:data_size, :, :, :]
-        data_RGB_flip = data_RGB[:, :, :, ::-1]
-        data_RGB = np.concatenate((data_RGB, data_RGB_flip), axis=0)
-
-    if outType == 'YUV':
-        data_out = color.rgb2yuv(data_RGB)
-        return data_out, data_RGB  # returns YUV as 4D tensor and RGB as 4D tensor
-
-    elif outType == 'LAB':
-        data_out = color.rgb2lab(data_RGB)
-        data_gray = color.rgb2gray(data_RGB)[:, :, :, None]
-        return data_out, data_gray  # returns LAB and grayscale as 4D tensor
+    return img
 
 
+def unpickle(file):
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo, encoding='bytes')
+    return dict
 
-def show_yuv(yuv_original, yuv_pred):
-    rgb_original = np.clip(color.yuv2rgb(yuv_original), 0, 1)
-    rgb_pred = np.clip(np.abs(color.yuv2rgb(yuv_pred)), 0, 1)
-    grey = color.rgb2grey(yuv_original)
 
+def imshow(original, pred):
     fig = plt.figure()
-    fig.add_subplot(1, 3, 1).set_title('greyscale')
+
+    fig.add_subplot(1, 2, 1).set_title('original')
     plt.axis('off')
-    plt.imshow(grey, cmap='gray')
+    plt.imshow(original)
 
-    fig.add_subplot(1, 3, 2).set_title('original')
+    fig.add_subplot(1, 2, 2).set_title('gan')
     plt.axis('off')
-    plt.imshow(rgb_original)
-
-    fig.add_subplot(1, 3, 3).set_title('gan')
-    plt.axis('off')
-    plt.imshow(rgb_pred)
-
-    plt.show()
-
-
-def show_rgb(rgb_original, rgb_pred):
-    grey = color.rgb2grey(rgb_original)
-
-    fig = plt.figure()
-    fig.add_subplot(1, 3, 1).set_title('greyscale')
-    plt.axis('off')
-    plt.imshow(grey, cmap='gray')
-
-    fig.add_subplot(1, 3, 2).set_title('original')
-    plt.axis('off')
-    plt.imshow(rgb_original)
-
-    fig.add_subplot(1, 3, 3).set_title('gan')
-    plt.axis('off')
-    plt.imshow(rgb_pred)
-
-    plt.show()
-
-
-def show_lab(lab_original, lab_pred):
-    lab_pred = lab_pred.astype(np.float64)
-    rgb_original = np.clip(color.lab2rgb(lab_original), 0, 1)
-    rgb_pred = np.clip(np.abs(color.lab2rgb(lab_pred)), 0, 1)
-    grey = color.rgb2grey(lab_original)
-
-    fig = plt.figure()
-    fig.add_subplot(1, 3, 1).set_title('greyscale')
-    plt.axis('off')
-    plt.imshow(grey, cmap='gray')
-
-    fig.add_subplot(1, 3, 2).set_title('original')
-    plt.axis('off')
-    plt.imshow(rgb_original)
-
-    fig.add_subplot(1, 3, 3).set_title('gan')
-    plt.axis('off')
-    plt.imshow(rgb_pred)
+    plt.imshow(pred)
 
     plt.show()
