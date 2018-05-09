@@ -179,7 +179,7 @@ class BaseModel:
         self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen)) * self.options.l1_weight
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
-        self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space)
+        self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space, self.options.acc_thresh)
 
 
         # generator optimizaer

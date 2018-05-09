@@ -13,7 +13,6 @@ tf.set_random_seed(options.seed)
 np.random.seed(options.seed)
 random.seed(options.seed)
 
-
 # create a session environment
 with tf.Session() as sess:
     model = model_factory(sess, options)

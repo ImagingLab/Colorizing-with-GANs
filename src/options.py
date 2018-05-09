@@ -30,6 +30,7 @@ class ModelOptions:
         parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam optimizer (default: 0.5)')
         parser.add_argument("--l1-weight", type=float, default=100.0, help="weight on L1 term for generator gradient (default: 100.0)")
         parser.add_argument('--augment', type=str2bool, default=True, help='True for augmentation (default: True)')
+        parser.add_argument('--acc-thresh', type=float, default=2.0, help="accuracy threshold (default: 2.0)")
         parser.add_argument('--save-interval', type=int, default=1000, help='how many batches to wait before saving model (default: 1000)')
         parser.add_argument('--log-interval', type=int, default=1000, help='how many batches to wait before logging training status (default: 1000)')
         parser.add_argument('--gpu-ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
