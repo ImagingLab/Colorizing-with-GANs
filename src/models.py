@@ -38,8 +38,8 @@ class BaseModel:
         total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
-            print('Training epoch: %d \n' % epoch)
-            self.epoch = epoch
+            print('Training epoch: %d' % (epoch + 1))
+            self.epoch = epoch + 1
             self.iteration = 0
             generator = self.dataset_train.generator(self.options.batch_size)
             progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
@@ -62,7 +62,7 @@ class BaseModel:
 
                 acc = self.accuracy.eval(feed_dict=feed_dic)
                 step = self.sess.run(self.global_step)
-                
+
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
                     ("iteration", self.iteration),
@@ -89,7 +89,7 @@ class BaseModel:
             self.evaluate()
 
     def evaluate(self):
-        print('\nEvaluating')
+        print('\nEvaluating epoch: %d' % self.epoch)
         test_total = len(self.dataset_test)
         test_generator = self.dataset_test.generator(self.options.batch_size)
         progbar = Progbar(test_total)
@@ -108,7 +108,7 @@ class BaseModel:
             errG = errG_l1 + errG_gan
 
             acc = self.accuracy.eval(feed_dict=feed_dic)
-            
+
             progbar.add(len(input_rgb), values=[
                 ("D loss", errD),
                 ("D fake", errD_fake),
