@@ -38,12 +38,12 @@ class BaseModel:
 
         start_time = time.time()
         total = len(self.dataset_train)
-        progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
 
         for epoch in range(self.options.epochs):
             self.epoch = epoch
             self.iteration = 0
             generator = self.dataset_train.generator(self.options.batch_size)
+            progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
 
             for input_rgb in generator:
                 self.iteration += 1
