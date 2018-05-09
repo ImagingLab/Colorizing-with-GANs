@@ -5,6 +5,7 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from abc import abstractmethod
 from .networks import Generator, Discriminator
@@ -44,7 +45,7 @@ class BaseModel:
                 self.iteration += 1
                 feed_dic = {self.input_rgb: input_rgb}
 
-                self.sess.run([self.dis_train, self.accuracy], feed_dict=feed_dic)
+                self.sess.run([self.dis_train], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
@@ -76,7 +77,7 @@ class BaseModel:
 
                 # log model at checkpoints
                 if self.iteration % self.options.log_interval == 0 and self.iteration > 0:
-                    self.test(show=False)
+                    self.sample(show=False)
 
 
                 # save model at checkpoints
@@ -85,7 +86,7 @@ class BaseModel:
 
             print('\n')
 
-    def test(self, show=True):
+    def sample(self, show=True):
         self.build()
 
         input_rgb = next(self.dataset_test_generator)
@@ -98,13 +99,19 @@ class BaseModel:
         if not os.path.exists(self.options.samples_path):
             os.makedirs(self.options.samples_path)
 
-        sample = self.options.dataset + "_" + str(self.epoch) + "_" + str(self.iteration) + ".png"
+        sample = self.options.dataset + "_E" + str(self.epoch).zfill(2) + "_I" + str(self.iteration).zfill(5) + ".png"
 
         if show:
-            img.show()
+            plt.imshow(np.array(img))
+            plt.axis('off')
+            plt.show()
         else:
             print('Saving sample ' + sample)
             img.save(os.path.join(self.options.samples_path, sample))
+
+    def test(self):
+        while True:
+            self.sample()
 
     def build(self):
         if self.is_built:

@@ -8,14 +8,14 @@ def stitch_images(grayscale, original, pred):
     # each row 6 images (3 original images followed by their predictions)
     ROW = 2
     width, height = original[0][:, :, 0].shape
-    img = Image.new('RGB', (width * ROW * 3 + 20, height * int(len(original) / ROW)))
+    img = Image.new('RGB', (width * ROW * 3 + 10, height * int(len(original) / ROW)))
 
     grayscale = np.array(grayscale).squeeze()
     original = np.array(original)
     pred = np.array(pred)
 
     for ix in range(len(original)):
-        xoffset = int(ix % ROW) * width * 3 + int(ix % ROW) * 20
+        xoffset = int(ix % ROW) * width * 3 + int(ix % ROW) * 10
         yoffset = int(ix / ROW) * height
         im1 = Image.fromarray(grayscale[ix])
         im2 = Image.fromarray(original[ix])
