@@ -5,7 +5,6 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 from abc import abstractmethod
 from tensorflow import keras
@@ -16,7 +15,7 @@ from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images
+from .utils import stitch_images, imshow
 
 
 class BaseModel:
@@ -28,7 +27,7 @@ class BaseModel:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
-        self.dataset_test_generator = self.dataset_test.generator(options.samples_size)
+        self.sample_generator = self.dataset_test.generator(options.samples_size, True)
         self.iteration = 0
         self.epoch = 0
         self.is_built = False
@@ -36,10 +35,10 @@ class BaseModel:
     def train(self):
         self.build()
 
-        start_time = time.time()
         total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
+            print('Training epoch: %d \n' % epoch)
             self.epoch = epoch
             self.iteration = 0
             generator = self.dataset_train.generator(self.options.batch_size)
@@ -87,12 +86,46 @@ class BaseModel:
                 if step % self.options.save_interval == 0:
                     self.save()
 
-            print('\n')
+            self.evaluate()
+
+    def evaluate(self):
+        print('\nEvaluating')
+        test_total = len(self.dataset_test)
+        test_generator = self.dataset_test.generator(self.options.batch_size)
+        progbar = Progbar(test_total)
+
+        for input_rgb in test_generator:
+            feed_dic = {self.input_rgb: input_rgb}
+
+            self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
+
+            errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
+            errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+            errD = errD_fake + errD_real
+
+            errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
+            errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
+            errG = errG_l1 + errG_gan
+
+            acc = self.accuracy.eval(feed_dict=feed_dic)
+            
+            progbar.add(len(input_rgb), values=[
+                ("D loss", errD),
+                ("D fake", errD_fake),
+                ("D real", errD_real),
+                ("G loss", errG),
+                ("G L1", errG_l1),
+                ("G gan", errG_gan),
+                ("accuracy", acc)
+            ])
+
+        print('\n')
+
 
     def sample(self, show=True):
         self.build()
 
-        input_rgb = next(self.dataset_test_generator)
+        input_rgb = next(self.sample_generator)
         feed_dic = {self.input_rgb: input_rgb}
 
         step = self.sess.run(self.global_step)
@@ -106,9 +139,7 @@ class BaseModel:
         sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
         if show:
-            plt.imshow(np.array(img))
-            plt.axis('off')
-            plt.show()
+            imshow(np.array(img))
         else:
             print('\nsaving sample ' + sample)
             img.save(os.path.join(self.options.samples_path, sample))
@@ -177,7 +208,7 @@ class BaseModel:
         return False
 
     def save(self):
-        print('\nsaving model...\n')
+        print('saving model...\n')
         self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), global_step=self.global_step)
 
     @abstractmethod

@@ -40,17 +40,22 @@ class BaseDataset():
 
         return img
 
-    def generator(self, batch_size, total=-1):
+    def generator(self, batch_size, recusrive=False):
         start = 0
-        total = len(self) if total == -1 else total
+        total = len(self)
 
-        while start < total:
-            end = np.min([start + batch_size, total])
-            items = np.array([self[item] for item in range(start, end)])
-            start = end
-            yield items
+        while True:
+            while start < total:
+                end = np.min([start + batch_size, total])
+                items = np.array([self[item] for item in range(start, end)])
+                start = end
+                yield items
 
-        raise StopIteration
+            if recusrive:
+                start = 0
+
+            else:
+                raise StopIteration
 
 
     @property
@@ -102,7 +107,7 @@ class Places365Dataset(BaseDataset):
     def load(self):
         if self.training:
             data = np.array(
-                #glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+                # glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
                 glob.glob(self.path + '/val_256/**/*.jpg', recursive=True))
 
         else:
