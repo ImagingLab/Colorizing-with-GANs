@@ -110,7 +110,7 @@ class BaseModel:
             plt.axis('off')
             plt.show()
         else:
-            print('Saving sample ' + sample)
+            print('\nsaving sample ' + sample)
             img.save(os.path.join(self.options.samples_path, sample))
 
     def test(self):
@@ -177,7 +177,7 @@ class BaseModel:
         return False
 
     def save(self):
-        print('saving model...\n')
+        print('\nsaving model...\n')
         self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), global_step=self.global_step)
 
     @abstractmethod
