@@ -19,6 +19,8 @@ with tf.Session() as sess:
     model = model_factory(sess, options)
     sess.run(tf.global_variables_initializer())
 
+    model.load()
+
     if options.train:
         model.train()
     else:
