@@ -58,12 +58,14 @@ class BaseModel:
                 errG = errG_l1 + errG_gan
 
                 acc = self.accuracy.eval(feed_dict=feed_dic)
+                step = self.sess.run(self.global_step)
 
-                print("epoch: %d iteration: %4d [%4d/%4d] time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
+                print("epoch: %d iteration: %4d [%4d/%4d] step: %d time: %4.4f, D loss: %.4f (fake: %.4f - real: %.4f), G loss: %.4f (L1: %.4f, gan: %.4f), accuracy: %.4f" % (
                     epoch + 1,
                     self.iteration,
                     self.iteration * self.options.batch_size,
                     total,
+                    step,
                     time.time() - start_time,
                     errD,
                     errD_fake,
@@ -92,6 +94,7 @@ class BaseModel:
         input_rgb = next(self.dataset_test_generator)
         feed_dic = {self.input_rgb: input_rgb}
 
+        step = self.sess.run(self.global_step)
         fake_image, input_gray = self.sess.run([self.sampler, self.input_gray], feed_dict=feed_dic)
         fake_image = postprocess(fake_image, colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
         img = stitch_images(input_gray, input_rgb, fake_image.eval())
@@ -99,7 +102,7 @@ class BaseModel:
         if not os.path.exists(self.options.samples_path):
             os.makedirs(self.options.samples_path)
 
-        sample = self.options.dataset + "_E" + str(self.epoch).zfill(2) + "_I" + str(self.iteration).zfill(5) + ".png"
+        sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
         if show:
             plt.imshow(np.array(img))
@@ -296,5 +299,4 @@ def model_factory(sess, options):
         os.makedirs(model.checkpoints_dir)
 
     model.build()
-    model.load()
     return model
