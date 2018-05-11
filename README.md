@@ -24,27 +24,26 @@ After downloading, put then under the `datasets` folder.
 ```bash
 python train.py
 ```
-- To change the default settings:
+- To train the model of places365 dataset with full settings:
 ```
 python train.py \
-  --seed [random seed] \
-  --color-space [RGB|LAB] \
-  --dataset [cifar10|places365] \
-  --dataset-path [path to the dataset] \
-  --checkpoints-path [path to save models] \
-  --samples-path [path to save samples] \
-  --batch-size [input batch size for training] \
-  --epochs [umber of epochs to train] \
-  --lr [learning rate] \
-  --lr-decay-rate [learning rate decay rate] \
-  --lr-decay-steps [learning rate decay steps] \
-  --beta1 [momentum term of adam optimizer] \
-  --l1-weight [weight on L1 term for generator gradient] \
-  --augment [augment dataset] \
-  --acc-thresh [accuracy threshold] \
-  --save-interval [number of batches before saving the model] \
-  --log-interval [number of batches before logging training status] \
-  --gpu-ids [gpu ids for training]
+  --seed 666 \
+  --dataset places365 \
+  --dataset-path ./dataset/places365 \
+  --checkpoints-path ./checkpoints \
+  --samples-path ./samples \
+  --batch-size 16 \
+  --epochs 20 \
+  --lr 2e-4 \
+  --lr-decay-rate 0.5 \
+  --lr-decay-steps 1e6 \
+  --beta1 0.5 \
+  --l1-weight 100 \
+  --augment True \
+  --acc-thresh 2 \
+  --save-interval 1000 \
+  --log-interval 1000 \
+  --gpu-ids 0
   
 ```
 
