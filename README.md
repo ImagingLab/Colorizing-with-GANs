@@ -25,7 +25,7 @@ After downloading, put then under the `datasets` folder.
 python train.py
 ```
 - To change the default settings:
-```bash
+```
 python train.py \
   --seed [random seed] \
   --color-space [RGB|LAB] \
