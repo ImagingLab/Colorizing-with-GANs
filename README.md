@@ -35,15 +35,26 @@ python train.py \
   --batch-size 16 \
   --epochs 20 \
   --lr 2e-4 \
-  --lr-decay-rate 0.5 \
-  --lr-decay-steps 1e6 \
   --beta1 0.5 \
   --l1-weight 100 \
-  --augment True \
-  --acc-thresh 2 \
-  --save-interval 1000 \
-  --log-interval 1000 \
-  --gpu-ids 0
+  --augment True
+  
+```
+
+- To train the model of cifar10 dataset with full settings:
+```
+python train.py \
+  --seed 666 \
+  --dataset cifar10 \
+  --dataset-path ./dataset/cifar10 \
+  --checkpoints-path ./checkpoints \
+  --samples-path ./samples \
+  --batch-size 128 \
+  --epochs 200 \
+  --lr 2e-4 \
+  --beta1 0.5 \
+  --l1-weight 100 \
+  --augment True
   
 ```
 
