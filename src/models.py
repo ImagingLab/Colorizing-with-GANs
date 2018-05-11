@@ -207,7 +207,6 @@ class BaseModel:
 
     def load(self):
         ckpt = tf.train.get_checkpoint_state(self.checkpoints_dir)
-
         if ckpt is not None:
             print('loading model...\n')
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
@@ -218,7 +217,7 @@ class BaseModel:
 
     def save(self):
         print('saving model...\n')
-        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), global_step=self.global_step)
+        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), write_meta_graph=False)
 
     @abstractmethod
     def get_input_shape(self):
