@@ -1,21 +1,14 @@
 # Image Colorization with Generative Adversarial Networks 
-Over the last decade, the process of automatic colorization had been studied thoroughly due to its vast application such as colorization of grayscale images and restoration of aged and/or degraded images. This problem is highly ill-posed due to the extremely large degrees of freedom during the assignment of color information. Many of the recent developments in automatic colorization involved images that contained a common theme throughout training, and/or required highly processed data such as semantic maps as input data. In our approach, we attempted to fully generalize this procedure using a conditional Deep Convolutional Generative Adversarial Network (DCGAN). The network is trained over datasets that are publicly available such as CIFAR-10 and Places365. The results of the generative model and tradition deep neural networks are compared. The colorization is done using two convolutional networks to as suggested by [Pix2Pix](https://github.com/phillipi/pix2pix).
-
-The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu). Some of the results from Places365 dataset are [shown here](#places365-results)
+In this repo, we generalize the colorization procedure using a conditional Deep Convolutional Generative Adversarial Network (DCGAN) as as suggested by [Pix2Pix]. The network is trained on the datasets [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu). Some of the results from Places365 dataset are [shown here.](#places365-results)
 
 ## Prerequisites
 - Linux
-- Tensorflow 1.4
-- Keras
+- Tensorflow 1.7
 - NVIDIA GPU (12G or 24G memory) + CUDA cuDNN
 
 ## Getting Startedf
 ### Installation
 - Install Tensorflow and dependencies from https://www.tensorflow.org/install/
-- Install Keras libraries [Keras](https://github.com/keras-team/keras).
-```bash
-sudo pip install keras
-```
 - Clone this repo:
 ```bash
 git clone https://github.com/ImagingLab/Colorizing-with-GANs.git
@@ -23,8 +16,8 @@ cd Colorizing-with-GANs
 ```
 
 ### Dataset
-- We use the [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu) datasets. To train a model on the full dataset, please download datasets from official websites.
-After downloading, please put it under the `datasets` folder in the same way the sub-directories are provided.
+- We use [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu) datasets. To train a model on the full dataset, download datasets from official websites.
+After downloading, put then under the `datasets` folder.
 
 ## Method
 
