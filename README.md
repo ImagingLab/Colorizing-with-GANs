@@ -58,6 +58,13 @@ python train.py \
   
 ```
 
+### Testing
+- To test the model, run `main.py` script with `--train 0` switch
+```bash
+python main.py --train 0 
+```
+
+
 ## Method
 
 ### Generative Adversarial Network
