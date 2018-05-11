@@ -24,6 +24,7 @@ class BaseModel:
         self.options = options
         self.name = 'CGAN_' + options.dataset
         self.checkpoints_dir = os.path.join(options.checkpoints_path, options.dataset)
+        self.samples_dir = os.path.join(options.samples_path, options.dataset)
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
@@ -38,7 +39,9 @@ class BaseModel:
         total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
-            print('Training epoch: %d' % (epoch + 1))
+            lr_rate = self.sess.run(self.learning_rate)
+
+            print('Training epoch: %d' % (epoch + 1) + " - learning rate: " + str(lr_rate))
             self.epoch = epoch + 1
             self.iteration = 0
             generator = self.dataset_train.generator(self.options.batch_size)
@@ -121,28 +124,27 @@ class BaseModel:
 
         print('\n')
 
-
     def sample(self, show=True):
         self.build()
 
         input_rgb = next(self.sample_generator)
         feed_dic = {self.input_rgb: input_rgb}
 
-        step = self.sess.run(self.global_step)
+        step, rate = self.sess.run([self.global_step, self.learning_rate])
         fake_image, input_gray = self.sess.run([self.sampler, self.input_gray], feed_dict=feed_dic)
         fake_image = postprocess(fake_image, colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
         img = stitch_images(input_gray, input_rgb, fake_image.eval())
 
-        if not os.path.exists(self.options.samples_path):
-            os.makedirs(self.options.samples_path)
+        if not os.path.exists(self.samples_dir):
+            os.makedirs(self.samples_dir)
 
         sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
         if show:
             imshow(np.array(img))
         else:
-            print('\nsaving sample ' + sample)
-            img.save(os.path.join(self.options.samples_path, sample))
+            print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
+            img.save(os.path.join(self.samples_dir, sample))
 
     def test(self):
         while True:
@@ -180,17 +182,21 @@ class BaseModel:
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
         self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space, self.options.acc_thresh)
-
+        self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
+            learning_rate=self.options.lr,
+            global_step=self.global_step * self.options.batch_size,
+            decay_steps=self.options.lr_decay_steps,
+            decay_rate=self.options.lr_decay_rate))
 
         # generator optimizaer
         self.gen_train = tf.train.AdamOptimizer(
-            learning_rate=self.options.lr,
+            learning_rate=self.learning_rate,
             beta1=self.options.beta1
         ).minimize(self.gen_loss, var_list=gen.var_list)
 
         # discriminator optimizaer
         self.dis_train = tf.train.AdamOptimizer(
-            learning_rate=self.options.lr,
+            learning_rate=self.learning_rate,
             beta1=self.options.beta1
         ).minimize(self.dis_loss, var_list=dis.var_list, global_step=self.global_step)
 
