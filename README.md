@@ -74,5 +74,5 @@ If you use this code for your research, please cite our paper <a href="https://a
 ## Places365 Results
 Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
 <p align='center'>  
-  <img src='img/places365.png' />
+  <img src='img/places365.jpg' />
 </p>
