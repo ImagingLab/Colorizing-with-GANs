@@ -6,7 +6,7 @@ In this repo, we generalize the colorization procedure using a conditional Deep 
 - Tensorflow 1.7
 - NVIDIA GPU (12G or 24G memory) + CUDA cuDNN
 
-## Getting Startedf
+## Getting Started
 ### Installation
 - Install Tensorflow and dependencies from https://www.tensorflow.org/install/
 - Clone this repo:
@@ -18,6 +18,35 @@ cd Colorizing-with-GANs
 ### Dataset
 - We use [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) and [Places365](http://places2.csail.mit.edu) datasets. To train a model on the full dataset, download datasets from official websites.
 After downloading, put then under the `datasets` folder.
+
+### Training
+- To train the model, run `main.py` script
+```bash
+python train.py
+```
+- To change the default settings:
+```bash
+python train.py \
+  --seed [random seed] \
+  --color-space [RGB|LAB] \
+  --dataset [cifar10|places365] \
+  --dataset-path [path to the dataset] \
+  --checkpoints-path [path to save models] \
+  --samples-path [path to save samples] \
+  --batch-size [input batch size for training] \
+  --epochs [umber of epochs to train] \
+  --lr [learning rate] \
+  --lr-decay-rate [learning rate decay rate] \
+  --lr-decay-steps [learning rate decay steps] \
+  --beta1 [momentum term of adam optimizer] \
+  --l1-weight [weight on L1 term for generator gradient] \
+  --augment [augment dataset] \
+  --acc-thresh [accuracy threshold] \
+  --save-interval [number of batches before saving the model] \
+  --log-interval [number of batches before logging training status] \
+  --gpu-ids [gpu ids for training]
+  
+```
 
 ## Method
 
