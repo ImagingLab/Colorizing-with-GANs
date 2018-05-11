@@ -84,18 +84,18 @@ In a traditional GAN, the input of the generator is randomly generated noise dat
 </p>
 The discriminator gets colored images from both generator and original data along with the grayscale input as the condition and tries to tell which pair contains the true colored image:
 <p align='center'>  
-  <img src='img/cgan.png' />
+  <img src='img/cgan.png' width='450px' height='368px' />
 </p>
 
 ### Networks Architecture
 The architecture of generator is inspired by  [U-Net](https://arxiv.org/abs/1505.04597):  The architecture of the model is symmetric, with `n` encoding units and `n` decoding units. The contracting path consists of 4x4 convolution layers with stride 2 for downsampling, each followed by batch normalization and Leaky-ReLU activation function with the slope of 0.2. The number of channels are doubled after each step. Each unit in the expansive path consists of a 4x4 transposed convolutional layer with stride 2 for upsampling, concatenation with the activation map of the mirroring layer in the contracting path, followed by batch normalization and ReLU activation function. The last layer of the network is a 1x1 convolution which is equivalent to cross-channel parametric pooling layer. We use `tanh` function for the last layer.
 <p align='center'>  
-  <img src='img/unet.png' width='950px' height='228px' />
+  <img src='img/unet.png' width='700px' height='168px' />
 </p>
 
 For discriminator, we use similar architecture as the baselines contractive path: a series of 4x4 convolutional layers with stride 2 with the number of channels being doubled after each downsampling. All convolution layers are followed by batch normalization, leaky ReLU activation with slope 0.2. After the last layer, a convolution is applied to map to a 1 dimensional output, followed by a sigmoid function to return a probability value of the input being real or fake
 <p align='center'>  
-  <img src='img/discriminator.png' width='510px' height='190px' />
+  <img src='img/discriminator.png' width='450px' height='168px' />
 </p>
   
 ## Places365 Results
