@@ -22,11 +22,11 @@ After downloading, put then under the `datasets` folder.
 ### Training
 - To train the model, run `main.py` script
 ```bash
-python train.py
+python main.py
 ```
 - To train the model of places365 dataset with full settings:
 ```
-python train.py \
+python main.py \
   --seed 666 \
   --dataset places365 \
   --dataset-path ./dataset/places365 \
@@ -43,7 +43,7 @@ python train.py \
 
 - To train the model of cifar10 dataset with full settings:
 ```
-python train.py \
+python main.py \
   --seed 666 \
   --dataset cifar10 \
   --dataset-path ./dataset/cifar10 \
