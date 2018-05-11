@@ -182,11 +182,14 @@ class BaseModel:
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
         self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space, self.options.acc_thresh)
-        self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
-            learning_rate=self.options.lr,
-            global_step=self.global_step * self.options.batch_size,
-            decay_steps=self.options.lr_decay_steps,
-            decay_rate=self.options.lr_decay_rate))
+        self.learning_rate = tf.constant(self.options.lr)
+        
+        if self.options.lr_decay_rate > 0:
+            self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
+                learning_rate=self.options.lr,
+                global_step=self.global_step * self.options.batch_size,
+                decay_steps=self.options.lr_decay_steps,
+                decay_rate=self.options.lr_decay_rate))
 
         # generator optimizaer
         self.gen_train = tf.train.AdamOptimizer(
