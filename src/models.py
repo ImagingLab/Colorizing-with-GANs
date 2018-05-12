@@ -22,9 +22,9 @@ class BaseModel:
     def __init__(self, sess, options):
         self.sess = sess
         self.options = options
-        self.name = 'CGAN_' + options.dataset
-        self.checkpoints_dir = os.path.join(options.checkpoints_path, options.dataset)
-        self.samples_dir = os.path.join(options.samples_path, options.dataset)
+        self.name = options.name
+        self.checkpoints_dir = options.checkpoints_path
+        self.samples_dir = os.path.join(options.checkpoints_path, 'samples')
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
@@ -141,7 +141,7 @@ class BaseModel:
         sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
         if show:
-            imshow(np.array(img))
+            imshow(np.array(img), self.name)
         else:
             print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
             img.save(os.path.join(self.samples_dir, sample))
@@ -217,7 +217,7 @@ class BaseModel:
 
     def save(self):
         print('saving model...\n')
-        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, self.name), write_meta_graph=False)
+        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, 'CGAN_' + self.options.dataset), write_meta_graph=False)
 
     @abstractmethod
     def get_input_shape(self):

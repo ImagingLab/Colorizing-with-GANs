@@ -33,8 +33,9 @@ def unpickle(file):
     return dict
 
 
-def imshow(img):
+def imshow(img, title=''):
+    fig = plt.gcf()
+    fig.canvas.set_window_title(title)
     plt.axis('off')
     plt.imshow(img)
-
     plt.show()

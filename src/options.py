@@ -17,11 +17,11 @@ class ModelOptions:
     def __init__(self):
         parser = argparse.ArgumentParser(description='Colorization with GANs')
         parser.add_argument('--seed', type=int, default=0, metavar='S', help='random seed (default: 0)')
+        parser.add_argument('--name', type=str, default='CGAN', help='arbitrary model name (default: CGAN)')
         parser.add_argument('--train', type=str2bool, default=True, help='True for training, False for testing (default: True)')
         parser.add_argument('--dataset', type=str, default='places365', help='the name of dataset [places365, cifar10] (default: places365)')
         parser.add_argument('--dataset-path', type=str, default='./dataset', help='dataset path (default: ./dataset)')
         parser.add_argument('--checkpoints-path', type=str, default='./checkpoints', help='models are saved here (default: ./checkpoints)')
-        parser.add_argument('--samples-path', type=str, default='./samples', help='samples are saved here (default: ./samples)')
         parser.add_argument('--samples-size', type=int, default=8, help='number of images to sample (default: 8)')
         parser.add_argument('--batch-size', type=int, default=16, metavar='N', help='input batch size for training (default: 16)')
         parser.add_argument('--color-space', type=str, default='lab', help='model color space [lab, yuv, rgb] (default: lab)')
@@ -47,6 +47,9 @@ class ModelOptions:
             opt.seed = random.randint(0, 2**31 - 1)
 
         if opt.dataset_path == './dataset':
+            opt.dataset_path += ('/' + opt.dataset)
+
+        if opt.checkpoints_path == './checkpoints':
             opt.dataset_path += ('/' + opt.dataset)
 
         args = vars(opt)
