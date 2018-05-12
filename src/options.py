@@ -28,7 +28,7 @@ class ModelOptions:
         parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train (default: 30)')
         parser.add_argument('--lr', type=float, default=2e-4, metavar='LR', help='learning rate (default: 2e-4)')
         parser.add_argument('--lr-decay-rate', type=float, default=0.5, help='learning rate exponentially decay rate (default: 0.5)')
-        parser.add_argument('--lr-decay-steps', type=float, default=1e6, help='learning rate exponentially decay steps (default: 1e6)')
+        parser.add_argument('--lr-decay-steps', type=float, default=5e5, help='learning rate exponentially decay steps (default: 5e5)')
         parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam optimizer (default: 0.5)')
         parser.add_argument("--l1-weight", type=float, default=100.0, help="weight on L1 term for generator gradient (default: 100.0)")
         parser.add_argument('--augment', type=str2bool, default=True, help='True for augmentation (default: True)')
