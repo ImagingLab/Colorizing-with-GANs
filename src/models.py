@@ -23,7 +23,6 @@ class BaseModel:
         self.sess = sess
         self.options = options
         self.name = options.name
-        self.checkpoints_dir = options.checkpoints_path
         self.samples_dir = os.path.join(options.checkpoints_path, 'samples')
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
@@ -55,16 +54,7 @@ class BaseModel:
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
-                errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
-                errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
-                errD = errD_fake + errD_real
-
-                errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
-                errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
-                errG = errG_l1 + errG_gan
-
-                acc = self.accuracy.eval(feed_dict=feed_dic)
-                step = self.sess.run(self.global_step)
+                errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
@@ -79,14 +69,17 @@ class BaseModel:
                     ("accuracy", acc)
                 ])
 
-
                 # log model at checkpoints
-                if step % self.options.log_interval == 0:
+                if self.options.log and step % self.options.log_interval == 0:
+                    with open(os.path.join(self.options.checkpoints_path, 'log.dat'), 'a') as f:
+                        f.write('%d %d %f %f %f %f %f\n' % (self.epoch, step, errD_fake, errD_real, errG_l1, errG_gan, acc))
+
+                # sample model at checkpoints
+                if self.options.sample and step % self.options.sample_interval == 0:
                     self.sample(show=False)
 
-
                 # save model at checkpoints
-                if step % self.options.save_interval == 0:
+                if self.options.save and step % self.options.save_interval == 0:
                     self.save()
 
             self.evaluate()
@@ -101,16 +94,7 @@ class BaseModel:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
-
-            errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
-            errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
-            errD = errD_fake + errD_real
-
-            errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
-            errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
-            errG = errG_l1 + errG_gan
-
-            acc = self.accuracy.eval(feed_dict=feed_dic)
+            errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
             progbar.add(len(input_rgb), values=[
                 ("D loss", errD),
@@ -160,6 +144,7 @@ class BaseModel:
         gen = self.create_generator()
         dis = self.create_discriminator()
         sce = tf.nn.sigmoid_cross_entropy_with_logits
+        smoothing = 0.9 if self.options.label_smoothing else 1
 
         input_shape = self.get_input_shape()
 
@@ -172,8 +157,7 @@ class BaseModel:
         self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True)
         self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
 
-
-        self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis)))
+        self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * smoothing))
         self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gan, labels=tf.zeros_like(self.gan)))
         self.dis_loss = self.dis_loss_real + self.dis_loss_fake
 
@@ -183,7 +167,7 @@ class BaseModel:
 
         self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space, self.options.acc_thresh)
         self.learning_rate = tf.constant(self.options.lr)
-        
+
         if self.options.lr_decay_rate > 0:
             self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
                 learning_rate=self.options.lr,
@@ -206,18 +190,32 @@ class BaseModel:
         self.saver = tf.train.Saver()
 
     def load(self):
-        ckpt = tf.train.get_checkpoint_state(self.checkpoints_dir)
+        ckpt = tf.train.get_checkpoint_state(self.options.checkpoints_path)
         if ckpt is not None:
             print('loading model...\n')
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(self.checkpoints_dir, ckpt_name))
+            self.saver.restore(self.sess, os.path.join(self.options.checkpoints_path, ckpt_name))
             return True
 
         return False
 
     def save(self):
         print('saving model...\n')
-        self.saver.save(self.sess, os.path.join(self.checkpoints_dir, 'CGAN_' + self.options.dataset), write_meta_graph=False)
+        self.saver.save(self.sess, os.path.join(self.options.checkpoints_path, 'CGAN_' + self.options.dataset), write_meta_graph=False)
+
+    def eval_outputs(self, feed_dic):
+        errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
+        errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+        errD = errD_fake + errD_real
+
+        errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
+        errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
+        errG = errG_l1 + errG_gan
+
+        acc = self.accuracy.eval(feed_dict=feed_dic)
+        step = self.sess.run(self.global_step)
+
+        return errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step
 
     @abstractmethod
     def get_input_shape(self):
@@ -335,8 +333,11 @@ def model_factory(sess, options):
     elif options.dataset == PLACES365_DATASET:
         model = Places365Model(sess, options)
 
-    if not os.path.exists(model.checkpoints_dir):
-        os.makedirs(model.checkpoints_dir)
+    if not os.path.exists(options.checkpoints_path):
+        os.makedirs(options.checkpoints_path)
+
+    if options.log:
+        open(os.path.join(options.checkpoints_path, 'log.dat'), 'w').close()
 
     model.build()
     return model
