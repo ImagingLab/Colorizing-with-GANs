@@ -8,6 +8,8 @@ from src import ModelOptions, model_factory
 options = ModelOptions().parse()
 
 
+tf.reset_default_graph()
+
 # initialize random seed
 tf.set_random_seed(options.seed)
 np.random.seed(options.seed)

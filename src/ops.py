@@ -5,11 +5,11 @@ COLORSPACE_RGB = 'RGB'
 COLORSPACE_LAB = 'LAB'
 
 
-def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu):
+def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu, seed=None):
     """
     Creates a conv2D block
     """
-    initializer = tf.random_normal_initializer(0, 0.02)
+    initializer = tf.random_normal_initializer(0, 0.02, seed=seed)
     res = tf.layers.conv2d(
         name=name,
         inputs=inputs,
@@ -26,11 +26,11 @@ def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activati
     return res
 
 
-def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu):
+def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu, seed=None):
     """
     Creates a conv2D-transpose block
     """
-    initializer = tf.random_normal_initializer(0, 0.02)
+    initializer = tf.random_normal_initializer(0, 0.02, seed=seed)
     res = tf.layers.conv2d_transpose(
         name=name,
         inputs=inputs,

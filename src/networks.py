@@ -9,9 +9,9 @@ class Discriminator(object):
         self.kernels = kernels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None):
+    def create(self, inputs, reuse_variables=None, seed=None):
         output = inputs
-        with tf.variable_scope(self.name, reuse=reuse_variables) as scope:
+        with tf.variable_scope(self.name, reuse=reuse_variables):
             for index, kernel in enumerate(self.kernels):
 
                 # not use batch-norm in the first layer
@@ -23,11 +23,12 @@ class Discriminator(object):
                     filters=kernel[0],
                     strides=kernel[1],
                     bnorm=bnorm,
-                    activation=tf.nn.leaky_relu
+                    activation=tf.nn.leaky_relu,
+                    seed=seed
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name)
+                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
 
             output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
             output = tf.layers.dense(inputs=output, units=1)
@@ -46,10 +47,10 @@ class Generator(object):
         self.output_channels = output_channels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None):
+    def create(self, inputs, reuse_variables=None, seed=None):
         output = inputs
 
-        with tf.variable_scope(self.name, reuse=reuse_variables) as scope:
+        with tf.variable_scope(self.name, reuse=reuse_variables):
 
             layers = []
 
@@ -62,13 +63,14 @@ class Generator(object):
                     name=name,
                     filters=kernel[0],
                     strides=kernel[1],
-                    activation=tf.nn.leaky_relu
+                    activation=tf.nn.leaky_relu,
+                    seed=seed
                 )
 
                 layers.append(output)
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name)
+                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
 
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
@@ -79,11 +81,12 @@ class Generator(object):
                     name=name,
                     filters=kernel[0],
                     strides=kernel[1],
-                    activation=tf.nn.relu
+                    activation=tf.nn.relu,
+                    seed=seed
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name)
+                    output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name, seed=seed)
 
                 output = tf.concat([output, layers[len(layers) - index - 2]], axis=3)
 
@@ -93,7 +96,8 @@ class Generator(object):
                 filters=self.output_channels,
                 strides=1,
                 bnorm=False,
-                activation=tf.nn.tanh
+                activation=tf.nn.tanh,
+                seed=seed
             )
 
             self.var_list = tf.get_collection(

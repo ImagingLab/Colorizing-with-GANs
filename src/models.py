@@ -41,8 +41,10 @@ class BaseModel:
             lr_rate = self.sess.run(self.learning_rate)
 
             print('Training epoch: %d' % (epoch + 1) + " - learning rate: " + str(lr_rate))
+            
             self.epoch = epoch + 1
             self.iteration = 0
+
             generator = self.dataset_train.generator(self.options.batch_size)
             progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
 
@@ -145,6 +147,7 @@ class BaseModel:
         dis = self.create_discriminator()
         sce = tf.nn.sigmoid_cross_entropy_with_logits
         smoothing = 0.9 if self.options.label_smoothing else 1
+        seed = seed=self.options.seed
 
         input_shape = self.get_input_shape()
 
@@ -152,10 +155,10 @@ class BaseModel:
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
 
-        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3))
-        self.gen = gen.create(inputs=self.input_gray)
-        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True)
-        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True)
+        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3), seed=seed)
+        self.gen = gen.create(inputs=self.input_gray, seed=seed)
+        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True, seed=seed)
+        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True, seed=seed)
 
         self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * smoothing))
         self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gan, labels=tf.zeros_like(self.gan)))
