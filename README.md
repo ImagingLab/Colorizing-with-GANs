@@ -31,7 +31,6 @@ python main.py \
   --dataset places365 \
   --dataset-path ./dataset/places365 \
   --checkpoints-path ./checkpoints \
-  --samples-path ./samples \
   --batch-size 16 \
   --epochs 20 \
   --lr 2e-4 \
@@ -46,7 +45,6 @@ python main.py \
   --dataset cifar10 \
   --dataset-path ./dataset/cifar10 \
   --checkpoints-path ./checkpoints \
-  --samples-path ./samples \
   --batch-size 64 \
   --epochs 200 \
   --lr 2e-4 \
