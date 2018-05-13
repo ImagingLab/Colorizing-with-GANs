@@ -101,9 +101,9 @@ ENV/
 .mypy_cache/
 
 # custom
-samples
-checkpoints
 TODO
+checkpoints
+plots
 vcs.xml
 .idea
 .vscode

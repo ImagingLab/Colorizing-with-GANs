@@ -41,7 +41,7 @@ class BaseModel:
             lr_rate = self.sess.run(self.learning_rate)
 
             print('Training epoch: %d' % (epoch + 1) + " - learning rate: " + str(lr_rate))
-            
+
             self.epoch = epoch + 1
             self.iteration = 0
 
@@ -73,12 +73,16 @@ class BaseModel:
 
                 # log model at checkpoints
                 if self.options.log and step % self.options.log_interval == 0:
-                    with open(os.path.join(self.options.checkpoints_path, 'log.dat'), 'a') as f:
+                    with open(os.path.join(self.options.checkpoints_path, 'log_train.dat'), 'a') as f:
                         f.write('%d %d %f %f %f %f %f\n' % (self.epoch, step, errD_fake, errD_real, errG_l1, errG_gan, acc))
 
                 # sample model at checkpoints
                 if self.options.sample and step % self.options.sample_interval == 0:
                     self.sample(show=False)
+
+                # evaluate model at checkpoints
+                if self.options.validate and self.options.validate_interval > 0 and step % self.options.validate_interval == 0:
+                    self.evaluate()
 
                 # save model at checkpoints
                 if self.options.save and step % self.options.save_interval == 0:
@@ -87,26 +91,27 @@ class BaseModel:
             self.evaluate()
 
     def evaluate(self):
-        print('\nEvaluating epoch: %d' % self.epoch)
+        print('\n\nEvaluating epoch: %d' % self.epoch)
         test_total = len(self.dataset_test)
         test_generator = self.dataset_test.generator(self.options.batch_size)
         progbar = Progbar(test_total)
+
+        result = []
 
         for input_rgb in test_generator:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
-            errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step = self.eval_outputs(feed_dic=feed_dic)
+            result.append(self.eval_outputs(feed_dic=feed_dic))
+            progbar.add(len(input_rgb))
+        
+        result = np.mean(np.array(result), axis=0)
+        print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f' 
+            % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
 
-            progbar.add(len(input_rgb), values=[
-                ("D loss", errD),
-                ("D fake", errD_fake),
-                ("D real", errD_real),
-                ("G loss", errG),
-                ("G L1", errG_l1),
-                ("G gan", errG_gan),
-                ("accuracy", acc)
-            ])
+        if self.options.log:
+            with open(os.path.join(self.options.checkpoints_path, 'log_test.dat'), 'a') as f:
+                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[7], result[1], result[2], result[4], result[5], result[6]))
 
         print('\n')
 
@@ -147,7 +152,7 @@ class BaseModel:
         dis = self.create_discriminator()
         sce = tf.nn.sigmoid_cross_entropy_with_logits
         smoothing = 0.9 if self.options.label_smoothing else 1
-        seed = seed=self.options.seed
+        seed = seed = self.options.seed
 
         input_shape = self.get_input_shape()
 
@@ -340,7 +345,8 @@ def model_factory(sess, options):
         os.makedirs(options.checkpoints_path)
 
     if options.log:
-        open(os.path.join(options.checkpoints_path, 'log.dat'), 'w').close()
+        open(os.path.join(options.checkpoints_path, 'log_train.dat'), 'w').close()
+        open(os.path.join(options.checkpoints_path, 'log_test.dat'), 'w').close()
 
     model.build()
     return model
