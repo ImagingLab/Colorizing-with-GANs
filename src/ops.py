@@ -3,13 +3,13 @@ import tensorflow as tf
 
 COLORSPACE_RGB = 'RGB'
 COLORSPACE_LAB = 'LAB'
-
+tf.nn.softmax_cross_entropy_with_logits_v2
 
 def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu, seed=None):
     """
     Creates a conv2D block
     """
-    initializer = tf.random_normal_initializer(0, 0.02, seed=seed)
+    initializer = tf.truncated_normal_initializer(mean=0, stddev=0.02, seed=seed)
     res = tf.layers.conv2d(
         name=name,
         inputs=inputs,
@@ -30,7 +30,7 @@ def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True
     """
     Creates a conv2D-transpose block
     """
-    initializer = tf.random_normal_initializer(0, 0.02, seed=seed)
+    initializer = tf.truncated_normal_initializer(mean=0, stddev=0.02, seed=seed)
     res = tf.layers.conv2d_transpose(
         name=name,
         inputs=inputs,
@@ -58,7 +58,7 @@ def pixelwise_accuracy(img_real, img_fake, colorspace, thresh):
     diffA = tf.abs(tf.round(img_real[..., 1]) - tf.round(img_fake[..., 1]))
     diffB = tf.abs(tf.round(img_real[..., 2]) - tf.round(img_fake[..., 2]))
 
-    # within %1 of the original
+    # within %thresh of the original
     predL = tf.cast(tf.less_equal(diffL, 1 * thresh), tf.float64)        # L: [0, 100]
     predA = tf.cast(tf.less_equal(diffA, 2.2 * thresh), tf.float64)      # A: [-110, 110]
     predB = tf.cast(tf.less_equal(diffB, 2.2 * thresh), tf.float64)      # B: [-110, 110]
