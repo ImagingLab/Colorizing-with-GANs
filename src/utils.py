@@ -51,17 +51,25 @@ def visualize(train_log_file, test_log_file, window_width):
     train_data = np.loadtxt(train_log_file)
     test_data = np.loadtxt(test_log_file)
 
+    if len(train_data.shape) < 2:
+        return
+
+    if len(train_data) < window_width:
+        window_width = len(train_data) - 1
+
     plt.ion()
     plt.subplot('121')
     plt.cla()
-    plt.plot(moving_average(train_data[:, 6], window_width))
+    if len(train_data) > 1:
+        plt.plot(moving_average(train_data[:, 6], window_width))
     plt.title('train')
 
     plt.subplot('122')
     plt.cla()
-    plt.plot(test_data[:, 6])
+    if len(test_data) > 1:
+        plt.plot(test_data[:, 6])
     plt.title('test')
 
     plt.show()
     plt.draw()
-    plt.pause(10)
+    plt.pause(.01)

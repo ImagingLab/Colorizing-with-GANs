@@ -79,7 +79,7 @@ class BaseModel:
                         f.write('%d %d %f %f %f %f %f\n' % (self.epoch, step, errD_fake, errD_real, errG_l1, errG_gan, acc))
 
                     if self.options.visualize:
-                        visualize(self.train_log_file, self.test_log_file, self.options.visualize_window)
+                        visualize(self.train_log_file, self.test_log_file, self.options.visualize_window, self.name)
 
                 # sample model at checkpoints
                 if self.options.sample and step % self.options.sample_interval == 0:
