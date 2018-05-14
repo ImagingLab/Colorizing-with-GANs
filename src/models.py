@@ -88,7 +88,8 @@ class BaseModel:
                 if self.options.save and step % self.options.save_interval == 0:
                     self.save()
 
-            self.evaluate()
+            if self.options.validate:
+                self.evaluate()
 
     def evaluate(self):
         print('\n\nEvaluating epoch: %d' % self.epoch)
@@ -104,10 +105,10 @@ class BaseModel:
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
             result.append(self.eval_outputs(feed_dic=feed_dic))
             progbar.add(len(input_rgb))
-        
+
         result = np.mean(np.array(result), axis=0)
-        print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f' 
-            % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
+        print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f'
+              % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
 
         if self.options.log:
             with open(os.path.join(self.options.checkpoints_path, 'log_test.dat'), 'a') as f:
@@ -153,6 +154,7 @@ class BaseModel:
         sce = tf.nn.sigmoid_cross_entropy_with_logits
         smoothing = 0.9 if self.options.label_smoothing else 1
         seed = seed = self.options.seed
+        kernel = self.options.kernel_size
 
         input_shape = self.get_input_shape()
 
@@ -160,10 +162,10 @@ class BaseModel:
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
 
-        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3), seed=seed)
-        self.gen = gen.create(inputs=self.input_gray, seed=seed)
-        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True, seed=seed)
-        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True, seed=seed)
+        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3), kernel_size=kernel, seed=seed)
+        self.gen = gen.create(inputs=self.input_gray, kernel_size=kernel, seed=seed)
+        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True, kernel_size=kernel, seed=seed)
+        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True, kernel_size=kernel, seed=seed)
 
         self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * smoothing))
         self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gan, labels=tf.zeros_like(self.gan)))

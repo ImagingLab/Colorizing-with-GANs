@@ -9,7 +9,7 @@ class Discriminator(object):
         self.kernels = kernels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None, seed=None):
+    def create(self, inputs, reuse_variables=None, kernel_size=None, seed=None):
         output = inputs
         with tf.variable_scope(self.name, reuse=reuse_variables):
             for index, kernel in enumerate(self.kernels):
@@ -20,6 +20,7 @@ class Discriminator(object):
                 output = conv2d(
                     inputs=output,
                     name=name,
+                    kernel_size=kernel_size,
                     filters=kernel[0],
                     strides=kernel[1],
                     bnorm=bnorm,
@@ -47,7 +48,7 @@ class Generator(object):
         self.output_channels = output_channels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None, seed=None):
+    def create(self, inputs, reuse_variables=None, kernel_size=None, seed=None):
         output = inputs
 
         with tf.variable_scope(self.name, reuse=reuse_variables):
@@ -61,6 +62,7 @@ class Generator(object):
                 output = conv2d(
                     inputs=output,
                     name=name,
+                    kernel_size=kernel_size,
                     filters=kernel[0],
                     strides=kernel[1],
                     activation=tf.nn.leaky_relu,

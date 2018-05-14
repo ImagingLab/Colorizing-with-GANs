@@ -33,6 +33,7 @@ class ModelOptions:
         parser.add_argument('--augment', type=str2bool, default=True, help='True for augmentation (default: True)')
         parser.add_argument('--label-smoothing', type=str2bool, default=False, help='True for one-sided label smoothing (default: False)')
         parser.add_argument('--acc-thresh', type=float, default=2.0, help="accuracy threshold (default: 2.0)")
+        parser.add_argument('--kernel-size', type=int, default=4, help="default kernel size (default: 4)")
         parser.add_argument('--save', type=str2bool, default=True, help='True for saving (default: True)')
         parser.add_argument('--save-interval', type=int, default=1000, help='how many batches to wait before saving model (default: 1000)')
         parser.add_argument('--sample', type=str2bool, default=True, help='True for sampling (default: True)')
