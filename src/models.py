@@ -113,7 +113,7 @@ class BaseModel:
 
         if self.options.log:
             with open(os.path.join(self.options.checkpoints_path, 'log_test.dat'), 'a') as f:
-                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[6], result[0], result[1], result[2], result[3], result[4]))
+                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[5], result[0], result[1], result[2], result[3], result[4]))
 
         print('\n')
 
