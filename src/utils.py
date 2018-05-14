@@ -33,9 +33,35 @@ def unpickle(file):
     return dict
 
 
+def moving_average(data, window_width):
+    cumsum_vec = np.cumsum(np.insert(data, 0, 0))
+    ma_vec = (cumsum_vec[window_width:] - cumsum_vec[:-window_width]) / window_width
+    return ma_vec
+
+
 def imshow(img, title=''):
     fig = plt.gcf()
     fig.canvas.set_window_title(title)
     plt.axis('off')
     plt.imshow(img)
     plt.show()
+
+
+def visualize(train_log_file, test_log_file, window_width):
+    train_data = np.loadtxt(train_log_file)
+    test_data = np.loadtxt(test_log_file)
+
+    plt.ion()
+    plt.subplot('121')
+    plt.cla()
+    plt.plot(moving_average(train_data[:, 6], window_width))
+    plt.title('train')
+
+    plt.subplot('122')
+    plt.cla()
+    plt.plot(test_data[:, 6])
+    plt.title('test')
+
+    plt.show()
+    plt.draw()
+    plt.pause(10)

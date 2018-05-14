@@ -15,7 +15,7 @@ from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, imshow
+from .utils import stitch_images, imshow, visualize
 
 
 class BaseModel:
@@ -24,6 +24,8 @@ class BaseModel:
         self.options = options
         self.name = options.name
         self.samples_dir = os.path.join(options.checkpoints_path, 'samples')
+        self.test_log_file = os.path.join(options.checkpoints_path, 'log_test.dat')
+        self.train_log_file = os.path.join(options.checkpoints_path, 'log_train.dat')
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
@@ -73,8 +75,11 @@ class BaseModel:
 
                 # log model at checkpoints
                 if self.options.log and step % self.options.log_interval == 0:
-                    with open(os.path.join(self.options.checkpoints_path, 'log_train.dat'), 'a') as f:
+                    with open(self.train_log_file, 'a') as f:
                         f.write('%d %d %f %f %f %f %f\n' % (self.epoch, step, errD_fake, errD_real, errG_l1, errG_gan, acc))
+
+                    if self.options.visualize:
+                        visualize(self.train_log_file, self.test_log_file, self.options.visualize_window)
 
                 # sample model at checkpoints
                 if self.options.sample and step % self.options.sample_interval == 0:
@@ -112,7 +117,7 @@ class BaseModel:
               % (result[0] + result[1], result[0], result[1], result[2] + result[3], result[2], result[3], result[4]))
 
         if self.options.log:
-            with open(os.path.join(self.options.checkpoints_path, 'log_test.dat'), 'a') as f:
+            with open(self.test_log_file, 'a') as f:
                 f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[5], result[0], result[1], result[2], result[3], result[4]))
 
         print('\n')
@@ -346,8 +351,8 @@ def model_factory(sess, options):
         os.makedirs(options.checkpoints_path)
 
     if options.log:
-        open(os.path.join(options.checkpoints_path, 'log_train.dat'), 'w').close()
-        open(os.path.join(options.checkpoints_path, 'log_test.dat'), 'w').close()
+        open(model.train_log_file, 'w').close()
+        open(model.test_log_file, 'w').close()
 
     model.build()
     return model

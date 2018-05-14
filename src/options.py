@@ -43,6 +43,8 @@ class ModelOptions:
         parser.add_argument('--validate-interval', type=int, default=0, help='how many batches to wait before validating (default: 0)')
         parser.add_argument('--log', type=str2bool, default=False, help='True for logging (default: True)')
         parser.add_argument('--log-interval', type=int, default=10, help='how many batches to wait before logging training status (default: 10)')
+        parser.add_argument('--visualize', type=str2bool, default=False, help='True for accuracy visualization (default: False)')
+        parser.add_argument('--visualize-window', type=int, default=100, help='the exponentially moving average window width (default: 100)')
         parser.add_argument('--gpu-ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 
         self._parser = parser
