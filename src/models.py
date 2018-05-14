@@ -56,16 +56,16 @@ class BaseModel:
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
-                errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step = self.eval_outputs(feed_dic=feed_dic)
+                errD_fake, errD_real, errG_l1, errG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
                     ("iteration", self.iteration),
                     ("step", step),
-                    ("D loss", errD),
+                    ("D loss", errD_fake + errD_real),
                     ("D fake", errD_fake),
                     ("D real", errD_real),
-                    ("G loss", errG),
+                    ("G loss", errG_l1 + errG_gan),
                     ("G L1", errG_l1),
                     ("G gan", errG_gan),
                     ("accuracy", acc)
@@ -103,16 +103,17 @@ class BaseModel:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
+            # errD_fake, errD_real, errG_l1, errG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
             result.append(self.eval_outputs(feed_dic=feed_dic))
             progbar.add(len(input_rgb))
 
         result = np.mean(np.array(result), axis=0)
         print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f'
-              % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
+              % (result[0] + result[1], result[0], result[1], result[2] + result[3], result[2], result[3], result[4]))
 
         if self.options.log:
             with open(os.path.join(self.options.checkpoints_path, 'log_test.dat'), 'a') as f:
-                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[7], result[1], result[2], result[4], result[5], result[6]))
+                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[6], result[0], result[1], result[2], result[3], result[4]))
 
         print('\n')
 
@@ -216,16 +217,14 @@ class BaseModel:
     def eval_outputs(self, feed_dic):
         errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
         errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
-        errD = errD_fake + errD_real
 
         errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
         errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
-        errG = errG_l1 + errG_gan
-
+        
         acc = self.accuracy.eval(feed_dict=feed_dic)
         step = self.sess.run(self.global_step)
 
-        return errD_fake, errD_real, errD, errG_l1, errG_gan, errG, acc, step
+        return errD_fake, errD_real, errG_l1, errG_gan, acc, step
 
     @abstractmethod
     def get_input_shape(self):
