@@ -225,7 +225,7 @@ class BaseModel:
 
         errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
         errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
-        
+
         acc = self.accuracy.eval(feed_dict=feed_dic)
         step = self.sess.run(self.global_step)
 
@@ -353,6 +353,14 @@ def model_factory(sess, options):
     if options.log:
         open(model.train_log_file, 'w').close()
         open(model.test_log_file, 'w').close()
+
+    args = vars(options)
+    print('\n------------ Options -------------')
+    with open(os.path.join(options.checkpoints_path, 'options.dat'), 'w') as f:
+        for k, v in sorted(args.items()):
+            print('%s: %s' % (str(k), str(v)))
+            f.write('%s: %s\n' % (str(k), str(v)))
+    print('-------------- End ----------------\n')
 
     model.build()
     return model

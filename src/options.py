@@ -62,10 +62,4 @@ class ModelOptions:
         if opt.checkpoints_path == './checkpoints':
             opt.checkpoints_path += ('/' + opt.dataset)
 
-        args = vars(opt)
-        print('\n------------ Options -------------')
-        for k, v in sorted(args.items()):
-            print('%s: %s' % (str(k), str(v)))
-        print('-------------- End ----------------\n')
-
         return opt
