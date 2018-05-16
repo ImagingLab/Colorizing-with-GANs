@@ -9,7 +9,7 @@ def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activati
     """
     Creates a conv2D block
     """
-    initializer = tf.truncated_normal_initializer(mean=0, stddev=0.02, seed=seed)
+    initializer=tf.variance_scaling_initializer(seed=seed)
     res = tf.layers.conv2d(
         name=name,
         inputs=inputs,
@@ -30,7 +30,7 @@ def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True
     """
     Creates a conv2D-transpose block
     """
-    initializer = tf.truncated_normal_initializer(mean=0, stddev=0.02, seed=seed)
+    initializer=tf.variance_scaling_initializer(seed=seed)
     res = tf.layers.conv2d_transpose(
         name=name,
         inputs=inputs,
