@@ -24,7 +24,7 @@ After downloading, put then under the `datasets` folder.
 ```bash
 python main.py
 ```
-- To train the model on places365 dataset with full settings:
+- To train the model on places365 dataset with our hyperparameters:
 ```
 python main.py \
   --seed 666 \
@@ -32,22 +32,22 @@ python main.py \
   --dataset-path ./dataset/places365 \
   --checkpoints-path ./checkpoints \
   --batch-size 16 \
-  --epochs 20 \
-  --lr 2e-4 \
+  --epochs 10 \
+  --lr 3e-4 \
   --augment True
   
 ```
 
-- To train the model of cifar10 dataset with full settings:
+- To train the model of cifar10 dataset with our hyperparameters:
 ```
 python main.py \
   --seed 666 \
   --dataset cifar10 \
   --dataset-path ./dataset/cifar10 \
   --checkpoints-path ./checkpoints \
-  --batch-size 64 \
+  --batch-size 128 \
   --epochs 200 \
-  --lr 2e-4 \
+  --lr 3e-4 \
   --augment True
   
 ```
