@@ -90,12 +90,13 @@ class Generator(object):
                 if kernel[2] > 0:
                     output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name, seed=seed)
 
-                output = tf.concat([output, layers[len(layers) - index - 2]], axis=3)
+                output = tf.concat([layers[len(layers) - index - 2], output], axis=3)
 
             output = conv2d(
                 inputs=output,
                 name='conv_last',
                 filters=self.output_channels,
+                kernel_size=1,
                 strides=1,
                 bnorm=False,
                 activation=tf.nn.tanh,

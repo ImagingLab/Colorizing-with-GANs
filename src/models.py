@@ -163,7 +163,7 @@ class BaseModel:
         kernel = self.options.kernel_size
 
         input_shape = self.get_input_shape()
-
+        
         self.input_rgb = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_rgb')
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
@@ -258,6 +258,7 @@ class Cifar10Model(BaseModel):
     def create_generator(self):
         kernels_gen_encoder = [
             (64, 1, 0),     # [batch, 32, 32, ch] => [batch, 32, 32, 64]
+            (64, 1, 0),     # [batch, 32, 32, 64] => [batch, 32, 32, 64]
             (128, 2, 0),    # [batch, 32, 32, 64] => [batch, 16, 16, 128]
             (256, 2, 0),    # [batch, 16, 16, 128] => [batch, 8, 8, 256]
             (512, 2, 0),    # [batch, 8, 8, 256] => [batch, 4, 4, 512]
@@ -266,11 +267,12 @@ class Cifar10Model(BaseModel):
 
         kernels_gen_decoder = [
             (512, 2, 0.5),  # [batch, 2, 2, 512] => [batch, 4, 4, 512]
-            (256, 2, 0),    # [batch, 4, 4, 512] => [batch, 8, 8, 256]
+            (256, 2, 0.5),  # [batch, 4, 4, 512] => [batch, 8, 8, 256]
             (128, 2, 0),    # [batch, 8, 8, 256] => [batch, 16, 16, 128]
-            (64, 2, 0)      # [batch, 16, 16, 128] => [batch, 32, 32, 512]
+            (64, 2, 0),     # [batch, 16, 16, 128] => [batch, 32, 32, 64]
+            (64, 1, 0),     # [batch, 32, 32, 64] => [batch, 32, 32, 64]
         ]
-
+        
         return Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
 
     def create_discriminator(self):

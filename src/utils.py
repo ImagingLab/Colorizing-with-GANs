@@ -9,7 +9,7 @@ def stitch_images(grayscale, original, pred):
     width, height = original[0][:, :, 0].shape
     img_per_row = 2 if width > 200 else 4
     img = Image.new('RGB', (width * img_per_row * 3 + gap * (img_per_row - 1), height * int(len(original) / img_per_row)))
-
+    
     grayscale = np.array(grayscale).squeeze()
     original = np.array(original)
     pred = np.array(pred)
