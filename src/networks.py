@@ -31,11 +31,11 @@ class Discriminator(object):
                 if kernel[2] > 0:
                     output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
 
+            # flatten + add dense layer
             output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
             output = tf.layers.dense(inputs=output, units=1)
 
-            self.var_list = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
+            self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
 
             return output
 
@@ -69,6 +69,7 @@ class Generator(object):
                     seed=seed
                 )
 
+                # save contracting path layers to be used for skip connections
                 layers.append(output)
 
                 if kernel[2] > 0:
@@ -90,20 +91,21 @@ class Generator(object):
                 if kernel[2] > 0:
                     output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
 
+                # concat the layer from the contracting path with the output of the current layer
+                # concat only the channels (axis=3)
                 output = tf.concat([layers[len(layers) - index - 2], output], axis=3)
 
             output = conv2d(
                 inputs=output,
                 name='conv_last',
-                filters=self.output_channels,
-                kernel_size=1,
-                strides=1,
-                bnorm=False,
-                activation=tf.nn.tanh,
+                filters=self.output_channels,   # number of output chanels 
+                kernel_size=1,                  # last layer kernel size = 1
+                strides=1,                      # last layer stride = 1
+                bnorm=False,                    # do not use batch-norm for the last layer
+                activation=tf.nn.tanh,          # tanh activation function for the output
                 seed=seed
             )
 
-            self.var_list = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
+            self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
 
             return output

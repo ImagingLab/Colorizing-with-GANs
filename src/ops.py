@@ -63,7 +63,9 @@ def pixelwise_accuracy(img_real, img_fake, colorspace, thresh):
     predA = tf.cast(tf.less_equal(diffA, 2.2 * thresh), tf.float64)      # A: [-110, 110]
     predB = tf.cast(tf.less_equal(diffB, 2.2 * thresh), tf.float64)      # B: [-110, 110]
 
+    # all three channels are within the threshold
     pred = predL * predA * predB
+
     return tf.reduce_mean(pred)
 
 

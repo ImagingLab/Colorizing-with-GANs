@@ -20,6 +20,7 @@ with tf.Session() as sess:
     model = model_factory(sess, options)
     sess.run(tf.global_variables_initializer())
 
+    # load model only after global variables initialization
     model.load()
 
     if options.train:
