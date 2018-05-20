@@ -9,6 +9,10 @@ In this work, we generalize the colorization procedure using a conditional Deep 
 ## Getting Started
 ### Installation
 - Install Tensorflow and dependencies from https://www.tensorflow.org/install/
+- Install python requirements:
+```bash
+pip install -r requirements.txt
+```
 - Clone this repo:
 ```bash
 git clone https://github.com/ImagingLab/Colorizing-with-GANs.git
