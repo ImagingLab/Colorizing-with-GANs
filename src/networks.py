@@ -88,7 +88,7 @@ class Generator(object):
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=0.5, name='dropout_' + name, seed=seed)
+                    output = tf.nn.dropout(output, keep_prob=kernel[2], name='dropout_' + name, seed=seed)
 
                 output = tf.concat([layers[len(layers) - index - 2], output], axis=3)
 
