@@ -37,7 +37,7 @@ class ModelOptions:
         parser.add_argument('--save', type=str2bool, default=True, help='True for saving (default: True)')
         parser.add_argument('--save-interval', type=int, default=1000, help='how many batches to wait before saving model (default: 1000)')
         parser.add_argument('--sample', type=str2bool, default=True, help='True for sampling (default: True)')
-        parser.add_argument('--samples-size', type=int, default=8, help='number of images to sample (default: 8)')
+        parser.add_argument('--sample-size', type=int, default=8, help='number of images to sample (default: 8)')
         parser.add_argument('--sample-interval', type=int, default=1000, help='how many batches to wait before sampling (default: 1000)')
         parser.add_argument('--validate', type=str2bool, default=True, help='True for validation (default: True)')
         parser.add_argument('--validate-interval', type=int, default=0, help='how many batches to wait before validating (default: 0)')

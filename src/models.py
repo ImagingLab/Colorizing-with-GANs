@@ -7,8 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 from abc import abstractmethod
-from tensorflow import keras
-from keras.utils import Progbar
+from tensorflow.keras.utils import Progbar
 
 from .networks import Generator, Discriminator
 from .dataset import CIFAR10_DATASET, PLACES365_DATASET
@@ -29,7 +28,7 @@ class BaseModel:
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
         self.dataset_test = self.create_dataset(False)
-        self.sample_generator = self.dataset_test.generator(options.samples_size, True)
+        self.sample_generator = self.dataset_test.generator(options.sample_size, True)
         self.iteration = 0
         self.epoch = 0
         self.is_built = False
