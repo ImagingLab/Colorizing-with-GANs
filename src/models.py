@@ -6,9 +6,8 @@ import time
 import numpy as np
 import tensorflow as tf
 
+from tensorflow import keras
 from abc import abstractmethod
-from tensorflow.keras.utils import Progbar
-
 from .networks import Generator, Discriminator
 from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
@@ -47,7 +46,7 @@ class BaseModel:
             self.iteration = 0
 
             generator = self.dataset_train.generator(self.options.batch_size)
-            progbar = Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
+            progbar = keras.utils.Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
 
             for input_rgb in generator:
                 self.iteration += 1
@@ -99,7 +98,7 @@ class BaseModel:
         print('\n\nEvaluating epoch: %d' % self.epoch)
         test_total = len(self.dataset_test)
         test_generator = self.dataset_test.generator(self.options.batch_size)
-        progbar = Progbar(test_total)
+        progbar = keras.utils.Progbar(test_total)
 
         result = []
 
