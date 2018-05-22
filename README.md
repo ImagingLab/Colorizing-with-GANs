@@ -28,10 +28,10 @@ After downloading, put then under the `datasets` folder.
 ```bash
 python main.py
 ```
-- To train the model on places365 dataset with our hyperparameters:
+- To train the model on places365 dataset with tuned hyperparameters:
 ```
 python main.py \
-  --seed 666 \
+  --seed 100 \
   --dataset places365 \
   --dataset-path ./dataset/places365 \
   --checkpoints-path ./checkpoints \
@@ -42,15 +42,15 @@ python main.py \
   
 ```
 
-- To train the model of cifar10 dataset with our hyperparameters:
+- To train the model of cifar10 dataset with tuned hyperparameters:
 ```
 python main.py \
-  --seed 666 \
+  --seed 100 \
   --dataset cifar10 \
   --dataset-path ./dataset/cifar10 \
   --checkpoints-path ./checkpoints \
   --batch-size 128 \
-  --epochs 200 \
+  --epochs 50 \
   --lr 3e-4 \
   --augment True
   
