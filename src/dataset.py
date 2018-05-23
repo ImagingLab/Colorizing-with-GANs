@@ -33,10 +33,14 @@ class BaseDataset():
 
     def __getitem__(self, index):
         val = self.data[index]
-        img = imread(val) if isinstance(val, str) else val
+        try:
+            img = imread(val) if isinstance(val, str) else val
 
-        if self.augment and np.random.binomial(1, 0.5) == 1:
-            img = img[:, ::-1, :]
+            if self.augment and np.random.binomial(1, 0.5) == 1:
+                img = img[:, ::-1, :]
+
+        except:
+            img = None
 
         return img
 
@@ -47,9 +51,15 @@ class BaseDataset():
         while True:
             while start < total:
                 end = np.min([start + batch_size, total])
-                items = np.array([self[item] for item in range(start, end)])
+                items = []
+
+                for ix in range(start, end):
+                    item = self[ix]
+                    if item is not None:
+                        items.append(item)
+
                 start = end
-                yield items
+                yield np.array(items)
 
             if recusrive:
                 start = 0
