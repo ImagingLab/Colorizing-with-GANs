@@ -142,10 +142,6 @@ class BaseModel:
             print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
             img.save(os.path.join(self.samples_dir, sample))
 
-    def test(self):
-        while True:
-            self.sample()
-
     def build(self):
         if self.is_built:
             return

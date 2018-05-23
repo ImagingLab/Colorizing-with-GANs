@@ -26,4 +26,6 @@ with tf.Session() as sess:
     if options.train:
         model.train()
     else:
-        model.test()
+        model.evaluate()
+        while True:
+            model.sample()
