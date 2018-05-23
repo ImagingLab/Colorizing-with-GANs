@@ -17,11 +17,13 @@ def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activati
         kernel_size=kernel_size,
         strides=strides,
         padding="same",
-        activation=activation,
         kernel_initializer=initializer)
 
     if bnorm:
         res = tf.layers.batch_normalization(inputs=res, name='bn_' + name, training=True)
+
+    # activation after batch-norm
+    res = activation(res)
 
     return res
 
@@ -38,11 +40,13 @@ def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True
         kernel_size=kernel_size,
         strides=strides,
         padding="same",
-        activation=activation,
         kernel_initializer=initializer)
 
     if bnorm:
         res = tf.layers.batch_normalization(inputs=res, name='bn_' + name, training=True)
+
+    # activation after batch-norm
+    res = activation(res)
 
     return res
 
