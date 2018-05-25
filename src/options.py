@@ -23,7 +23,7 @@ class ModelOptions:
         parser.add_argument('--dataset-path', type=str, default='./dataset', help='dataset path (default: ./dataset)')
         parser.add_argument('--checkpoints-path', type=str, default='./checkpoints', help='models are saved here (default: ./checkpoints)')
         parser.add_argument('--batch-size', type=int, default=16, metavar='N', help='input batch size for training (default: 16)')
-        parser.add_argument('--color-space', type=str, default='lab', help='model color space [lab, yuv, rgb] (default: lab)')
+        parser.add_argument('--color-space', type=str, default='lab', help='model color space [lab, rgb] (default: lab)')
         parser.add_argument('--epochs', type=int, default=30, metavar='N', help='number of epochs to train (default: 30)')
         parser.add_argument('--lr', type=float, default=3e-4, metavar='LR', help='learning rate (default: 3e-4)')
         parser.add_argument('--lr-decay-rate', type=float, default=0.5, help='learning rate exponentially decay rate (default: 0.5)')
@@ -52,6 +52,8 @@ class ModelOptions:
     def parse(self):
         opt = self._parser.parse_args()
         os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_ids
+
+        opt.color_space = opt.color_space.upper()
 
         if opt.seed == 0:
             opt.seed = random.randint(0, 2**31 - 1)
