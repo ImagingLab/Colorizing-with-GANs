@@ -82,6 +82,7 @@ class Generator(object):
                 output = conv2d_transpose(
                     inputs=output,
                     name=name,
+                    kernel_size=kernel_size,
                     filters=kernel[0],
                     strides=kernel[1],
                     activation=tf.nn.relu,
