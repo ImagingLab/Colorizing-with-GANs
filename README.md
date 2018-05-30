@@ -30,7 +30,7 @@ python main.py
 ```
 - To train the model on places365 dataset with tuned hyperparameters:
 ```
-python main.py \
+python train.py \
   --seed 100 \
   --dataset places365 \
   --dataset-path ./dataset/places365 \
@@ -44,7 +44,7 @@ python main.py \
 
 - To train the model of cifar10 dataset with tuned hyperparameters:
 ```
-python main.py \
+python train.py \
   --seed 100 \
   --dataset cifar10 \
   --dataset-path ./dataset/cifar10 \
@@ -56,10 +56,21 @@ python main.py \
   
 ```
 
-### Testing
-- To test the model, run `main.py` script with `--train 0` switch
+### Evaluate
+- To evaluate the model quantitatively on the test-set, run `test-eval.py` script:
 ```bash
-python main.py --train 0 
+python test-eval.py
+```
+
+### Turing Test
+- To evaluate the model qualitatively using human perception, run `test-turing.py`:
+```bash
+python test-turing.py
+```
+
+- To apply time-based Turing test run (2 seconds decision time):
+```bash
+python test-turing.py --test-delay 2
 ```
 
 
