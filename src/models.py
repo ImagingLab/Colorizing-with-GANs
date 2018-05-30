@@ -9,11 +9,10 @@ import tensorflow as tf
 from tensorflow import keras
 from abc import abstractmethod
 from .networks import Generator, Discriminator
-from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, test_images, imshow, visualize
+from .utils import stitch_images, turing_test, imshow, visualize
 
 
 class BaseModel:
@@ -142,17 +141,20 @@ class BaseModel:
             print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
             img.save(os.path.join(self.samples_dir, sample))
 
-    def test(self):
-        gen = self.dataset_test.generator(self.options.sample_size, True)
+    def turing_test(self):
+        batch_size = self.options.batch_size
+        gen = self.dataset_test.generator(batch_size, True)
         count = 0
         score = 0
-        while True:
+
+        while count < self.options.test_size:
             input_rgb = next(gen)
             feed_dic = {self.input_rgb: input_rgb}
             fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
             fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
-            for i in range(self.options.sample_size):
-                res = test_images(input_rgb[i], fake_image.eval()[i])
+
+            for i in range(np.min([batch_size, self.options.test_size - count])):
+                res = turing_test(input_rgb[i], fake_image.eval()[i], self.options.test_delay)
                 count += 1
                 score += res
                 print('success: %d - fail: %d - rate: %f' % (score, count - score, (count - score) / count))
@@ -349,29 +351,3 @@ class Places365Model(BaseModel):
             path=self.options.dataset_path,
             training=training,
             augment=self.options.augment)
-
-
-def model_factory(sess, options):
-    if options.dataset == CIFAR10_DATASET:
-        model = Cifar10Model(sess, options)
-
-    elif options.dataset == PLACES365_DATASET:
-        model = Places365Model(sess, options)
-
-    if not os.path.exists(options.checkpoints_path):
-        os.makedirs(options.checkpoints_path)
-
-    if options.log:
-        open(model.train_log_file, 'w').close()
-        open(model.test_log_file, 'w').close()
-
-    args = vars(options)
-    print('\n------------ Options -------------')
-    with open(os.path.join(options.checkpoints_path, 'options.dat'), 'w') as f:
-        for k, v in sorted(args.items()):
-            print('%s: %s' % (str(k), str(v)))
-            f.write('%s: %s\n' % (str(k), str(v)))
-    print('-------------- End ----------------\n')
-
-    model.build()
-    return model

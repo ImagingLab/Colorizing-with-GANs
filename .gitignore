@@ -101,7 +101,7 @@ ENV/
 .mypy_cache/
 
 # custom
-TODO
+_TODO
 checkpoints
 plots
 vcs.xml
