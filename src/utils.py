@@ -9,7 +9,7 @@ def stitch_images(grayscale, original, pred):
     width, height = original[0][:, :, 0].shape
     img_per_row = 2 if width > 200 else 4
     img = Image.new('RGB', (width * img_per_row * 3 + gap * (img_per_row - 1), height * int(len(original) / img_per_row)))
-    
+
     grayscale = np.array(grayscale).squeeze()
     original = np.array(original)
     pred = np.array(pred)
@@ -43,8 +43,42 @@ def imshow(img, title=''):
     fig = plt.gcf()
     fig.canvas.set_window_title(title)
     plt.axis('off')
-    plt.imshow(img)
+    plt.imshow(img, interpolation='none')
     plt.show()
+
+
+def test_images(real_img, fake_img):
+    height, width, _ = real_img.shape
+    imgs = np.array([real_img, (fake_img * 255).astype(np.uint8)])
+    real_index = np.random.binomial(1, 0.5)
+    fake_index = (real_index + 1) % 2
+
+    img = Image.new('RGB', (2 + width * 2, height))
+    img.paste(Image.fromarray(imgs[real_index]), (0, 0))
+    img.paste(Image.fromarray(imgs[fake_index]), (2 + width, 0))
+
+    img.success = 0
+
+    def onclick(event):
+        if event.xdata is not None:
+            if event.x < width and real_index == 0:
+                img.success = 1
+
+            elif event.x > width and real_index == 1:
+                img.success = 1
+
+            #plt.close()
+
+    plt.gcf().canvas.mpl_connect('button_press_event', onclick)
+    plt.ion()
+    plt.title('click on the real image')
+    plt.axis('off')
+    plt.imshow(img, interpolation='none')
+    plt.show()
+    plt.draw()
+    plt.pause(2)
+
+    return img.success
 
 
 def visualize(train_log_file, test_log_file, window_width, title=''):

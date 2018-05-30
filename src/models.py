@@ -13,7 +13,7 @@ from .dataset import CIFAR10_DATASET, PLACES365_DATASET
 from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, imshow, visualize
+from .utils import stitch_images, test_images, imshow, visualize
 
 
 class BaseModel:
@@ -142,6 +142,21 @@ class BaseModel:
             print('\nsaving sample ' + sample + ' - learning rate: ' + str(rate))
             img.save(os.path.join(self.samples_dir, sample))
 
+    def test(self):
+        gen = self.dataset_test.generator(self.options.sample_size, True)
+        count = 0
+        score = 0
+        while True:
+            input_rgb = next(gen)
+            feed_dic = {self.input_rgb: input_rgb}
+            fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
+            fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
+            for i in range(self.options.sample_size):
+                res = test_images(input_rgb[i], fake_image.eval()[i])
+                count += 1
+                score += res
+                print('success: %d - fail: %d - rate: %f' % (score, count - score, (count - score) / count))
+
     def build(self):
         if self.is_built:
             return
@@ -157,7 +172,7 @@ class BaseModel:
         kernel = self.options.kernel_size
 
         input_shape = self.get_input_shape()
-        
+
         self.input_rgb = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_rgb')
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
@@ -266,7 +281,7 @@ class Cifar10Model(BaseModel):
             (64, 2, 0),     # [batch, 16, 16, 128] => [batch, 32, 32, 64]
             (64, 1, 0),     # [batch, 32, 32, 64] => [batch, 32, 32, 64]
         ]
-        
+
         return Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
 
     def create_discriminator(self):
