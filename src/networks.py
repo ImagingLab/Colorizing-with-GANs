@@ -31,9 +31,15 @@ class Discriminator(object):
                 if kernel[2] > 0:
                     output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
 
-            # flatten + add dense layer
-            output = tf.reshape(output, [-1, np.prod(output.shape[1:])])
-            output = tf.layers.dense(inputs=output, units=1)
+            output = conv2d(
+                inputs=output,
+                name='conv_last',
+                filters=1,
+                kernel_size=4,                  # last layer kernel size = 4
+                strides=1,                      # last layer stride = 1
+                bnorm=False,                    # do not use batch-norm for the last layer
+                seed=seed
+            )
 
             self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.name)
 
@@ -99,7 +105,7 @@ class Generator(object):
             output = conv2d(
                 inputs=output,
                 name='conv_last',
-                filters=self.output_channels,   # number of output chanels 
+                filters=self.output_channels,   # number of output chanels
                 kernel_size=1,                  # last layer kernel size = 1
                 strides=1,                      # last layer stride = 1
                 bnorm=False,                    # do not use batch-norm for the last layer

@@ -173,9 +173,7 @@ class BaseModel:
         seed = seed = self.options.seed
         kernel = self.options.kernel_size
 
-        input_shape = self.get_input_shape()
-
-        self.input_rgb = tf.placeholder(tf.float32, shape=(None, input_shape[0], input_shape[1], input_shape[2]), name='input_rgb')
+        self.input_rgb = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_rgb')
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
 
@@ -243,10 +241,6 @@ class BaseModel:
         return errD_fake, errD_real, errG_l1, errG_gan, acc, step
 
     @abstractmethod
-    def get_input_shape(self):
-        raise NotImplementedError
-
-    @abstractmethod
     def create_generator(self):
         raise NotImplementedError
 
@@ -262,9 +256,6 @@ class BaseModel:
 class Cifar10Model(BaseModel):
     def __init__(self, sess, options):
         super(Cifar10Model, self).__init__(sess, options)
-
-    def get_input_shape(self):
-        return (32, 32, 3)
 
     def create_generator(self):
         kernels_gen_encoder = [
@@ -306,9 +297,6 @@ class Cifar10Model(BaseModel):
 class Places365Model(BaseModel):
     def __init__(self, sess, options):
         super(Places365Model, self).__init__(sess, options)
-
-    def get_input_shape(self):
-        return (256, 256, 3)
 
     def create_generator(self):
         kernels_gen_encoder = [
