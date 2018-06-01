@@ -5,7 +5,7 @@ COLORSPACE_RGB = 'RGB'
 COLORSPACE_LAB = 'LAB'
 tf.nn.softmax_cross_entropy_with_logits_v2
 
-def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu, seed=None):
+def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=None, seed=None):
     """
     Creates a conv2D block
     """
@@ -23,12 +23,13 @@ def conv2d(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activati
         res = tf.layers.batch_normalization(inputs=res, name='bn_' + name, training=True)
 
     # activation after batch-norm
-    res = activation(res)
+    if activation is not None:
+        res = activation(res)
 
     return res
 
 
-def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=tf.nn.relu, seed=None):
+def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True, activation=None, seed=None):
     """
     Creates a conv2D-transpose block
     """
@@ -46,7 +47,8 @@ def conv2d_transpose(inputs, filters, name, kernel_size=4, strides=2, bnorm=True
         res = tf.layers.batch_normalization(inputs=res, name='bn_' + name, training=True)
 
     # activation after batch-norm
-    res = activation(res)
+    if activation is not None:
+        res = activation(res)
 
     return res
 
