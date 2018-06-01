@@ -35,15 +35,6 @@ def main(options):
             open(model.train_log_file, 'w').close()
             open(model.test_log_file, 'w').close()
 
-        args = vars(options)
-        print('\n------------ Options -------------')
-        with open(os.path.join(options.checkpoints_path, 'options.dat'), 'w') as f:
-            for k, v in sorted(args.items()):
-                print('%s: %s' % (str(k), str(v)))
-                f.write('%s: %s\n' % (str(k), str(v)))
-        print('-------------- End ----------------\n')
-
-
         # build the model and initialize
         model.build()
         sess.run(tf.global_variables_initializer())
@@ -54,6 +45,14 @@ def main(options):
 
 
         if options.mode == 0:
+            args = vars(options)
+            print('\n------------ Options -------------')
+            with open(os.path.join(options.checkpoints_path, 'options.dat'), 'w') as f:
+                for k, v in sorted(args.items()):
+                    print('%s: %s' % (str(k), str(v)))
+                    f.write('%s: %s\n' % (str(k), str(v)))
+            print('-------------- End ----------------\n')
+            
             model.train()
 
         elif options.mode == 1:
