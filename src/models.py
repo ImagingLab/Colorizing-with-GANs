@@ -55,25 +55,25 @@ class BaseModel:
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
 
-                errD_fake, errD_real, errG_l1, errG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
+                lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
                     ("iteration", self.iteration),
                     ("step", step),
-                    ("D loss", errD_fake + errD_real),
-                    ("D fake", errD_fake),
-                    ("D real", errD_real),
-                    ("G loss", errG_l1 + errG_gan),
-                    ("G L1", errG_l1),
-                    ("G gan", errG_gan),
+                    ("D loss", lossD),
+                    ("D fake", lossD_fake),
+                    ("D real", lossD_real),
+                    ("G loss", lossG),
+                    ("G L1", lossG_l1),
+                    ("G gan", lossG_gan),
                     ("accuracy", acc)
                 ])
 
                 # log model at checkpoints
                 if self.options.log and step % self.options.log_interval == 0:
                     with open(self.train_log_file, 'a') as f:
-                        f.write('%d %d %f %f %f %f %f\n' % (self.epoch, step, errD_fake, errD_real, errG_l1, errG_gan, acc))
+                        f.write('%d %d %f %f %f %f %f %f %f\n' % (self.epoch, step, lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc))
 
                     if self.options.visualize:
                         visualize(self.train_log_file, self.test_log_file, self.options.visualize_window, self.name)
@@ -105,17 +105,20 @@ class BaseModel:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
-            # errD_fake, errD_real, errG_l1, errG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
+
+            # returns (D loss, D_fake loss, D_real loss, G loss, G_L1 loss, G_gan loss, accuracy, step)
             result.append(self.eval_outputs(feed_dic=feed_dic))
+
             progbar.add(len(input_rgb))
 
         result = np.mean(np.array(result), axis=0)
         print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f'
-              % (result[0] + result[1], result[0], result[1], result[2] + result[3], result[2], result[3], result[4]))
+              % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
 
         if self.options.log:
             with open(self.test_log_file, 'a') as f:
-                f.write('%d %d %f %f %f %f %f\n' % (self.epoch, result[5], result[0], result[1], result[2], result[3], result[4]))
+                # (epoch, step, lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc)
+                f.write('%d %d %f %f %f %f %f %f %f\n' % (self.epoch, result[7], result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
 
         print('\n')
 
@@ -165,10 +168,8 @@ class BaseModel:
 
         self.is_built = True
 
-        # create models
-        gen = self.create_generator()
-        dis = self.create_discriminator()
-        sce = tf.nn.sigmoid_cross_entropy_with_logits
+        gen_factory = self.create_generator()
+        dis_factory = self.create_discriminator()
         smoothing = 0.9 if self.options.label_smoothing else 1
         seed = seed = self.options.seed
         kernel = self.options.kernel_size
@@ -177,22 +178,27 @@ class BaseModel:
         self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
 
-        self.dis = dis.create(inputs=tf.concat([self.input_gray, self.input_color], 3), kernel_size=kernel, seed=seed)
-        self.gen = gen.create(inputs=self.input_gray, kernel_size=kernel, seed=seed)
-        self.gan = dis.create(inputs=tf.concat([self.input_gray, self.gen], 3), reuse_variables=True, kernel_size=kernel, seed=seed)
-        self.sampler = gen.create(inputs=self.input_gray, reuse_variables=True, kernel_size=kernel, seed=seed)
+        gen = gen_factory.create(self.input_gray, kernel, seed)
+        dis_real = dis_factory.create(tf.concat([self.input_gray, self.input_color], 3), kernel, seed)
+        dis_fake = dis_factory.create(tf.concat([self.input_gray, gen], 3), kernel, seed, reuse_variables=True)
 
-        self.dis_loss_real = tf.reduce_mean(sce(logits=self.dis, labels=tf.ones_like(self.dis) * smoothing))
-        self.dis_loss_fake = tf.reduce_mean(sce(logits=self.gan, labels=tf.zeros_like(self.gan)))
-        self.dis_loss = self.dis_loss_real + self.dis_loss_fake
+        gen_ce = tf.nn.sigmoid_cross_entropy_with_logits(logits=dis_fake, labels=tf.ones_like(dis_fake))
+        dis_real_ce = tf.nn.sigmoid_cross_entropy_with_logits(logits=dis_real, labels=tf.ones_like(dis_real) * smoothing)
+        dis_fake_ce = tf.nn.sigmoid_cross_entropy_with_logits(logits=dis_fake, labels=tf.zeros_like(dis_fake))
 
-        self.gen_loss_gan = tf.reduce_mean(sce(logits=self.gan, labels=tf.ones_like(self.gan)))
-        self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - self.gen)) * self.options.l1_weight
+        self.dis_loss_real = tf.reduce_mean(dis_real_ce)
+        self.dis_loss_fake = tf.reduce_mean(dis_fake_ce)
+        self.dis_loss = tf.reduce_mean(dis_real_ce + dis_fake_ce)
+
+        self.gen_loss_gan = tf.reduce_mean(gen_ce)
+        self.gen_loss_l1 = tf.reduce_mean(tf.abs(self.input_color - gen)) * self.options.l1_weight
         self.gen_loss = self.gen_loss_gan + self.gen_loss_l1
 
-        self.accuracy = pixelwise_accuracy(self.input_color, self.gen, self.options.color_space, self.options.acc_thresh)
+        self.sampler = gen_factory.create(self.input_gray, kernel, seed, reuse_variables=True)
+        self.accuracy = pixelwise_accuracy(self.input_color, gen, self.options.color_space, self.options.acc_thresh)
         self.learning_rate = tf.constant(self.options.lr)
 
+        # learning rate decay
         if self.options.lr_decay_rate > 0:
             self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
                 learning_rate=self.options.lr,
@@ -204,13 +210,13 @@ class BaseModel:
         self.gen_train = tf.train.AdamOptimizer(
             learning_rate=self.learning_rate,
             beta1=self.options.beta1
-        ).minimize(self.gen_loss, var_list=gen.var_list)
+        ).minimize(self.gen_loss, var_list=gen_factory.var_list)
 
         # discriminator optimizaer
         self.dis_train = tf.train.AdamOptimizer(
             learning_rate=self.learning_rate,
             beta1=self.options.beta1
-        ).minimize(self.dis_loss, var_list=dis.var_list, global_step=self.global_step)
+        ).minimize(self.dis_loss, var_list=dis_factory.var_list, global_step=self.global_step)
 
         self.saver = tf.train.Saver()
 
@@ -229,16 +235,22 @@ class BaseModel:
         self.saver.save(self.sess, os.path.join(self.options.checkpoints_path, 'CGAN_' + self.options.dataset), write_meta_graph=False)
 
     def eval_outputs(self, feed_dic):
-        errD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
-        errD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+        '''
+        evaluates the loss and accuracy
+        returns (D loss, D_fake loss, D_real loss, G loss, G_L1 loss, G_gan loss, accuracy, step)
+        '''
+        lossD_fake = self.dis_loss_fake.eval(feed_dict=feed_dic)
+        lossD_real = self.dis_loss_real.eval(feed_dict=feed_dic)
+        lossD = self.dis_loss.eval(feed_dict=feed_dic)
 
-        errG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
-        errG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
+        lossG_l1 = self.gen_loss_l1.eval(feed_dict=feed_dic)
+        lossG_gan = self.gen_loss_gan.eval(feed_dict=feed_dic)
+        lossG = lossG_l1 + lossG_gan
 
         acc = self.accuracy.eval(feed_dict=feed_dic)
         step = self.sess.run(self.global_step)
 
-        return errD_fake, errD_real, errG_l1, errG_gan, acc, step
+        return lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step
 
     @abstractmethod
     def create_generator(self):
@@ -280,7 +292,7 @@ class Cifar10Model(BaseModel):
             (64, 2, 0),     # [batch, 32, 32, ch] => [batch, 16, 16, 64]
             (128, 2, 0),    # [batch, 16, 16, 64] => [batch, 8, 8, 128]
             (256, 2, 0),    # [batch, 8, 8, 128] => [batch, 4, 4, 256]
-            (512, 1, 0)     # [batch, 4, 4, 256] => [batch, 4, 4, 512]
+            (512, 1, 0),    # [batch, 4, 4, 256] => [batch, 4, 4, 512]
         ]
 
         return Discriminator('dis', kernels_dis)
@@ -309,9 +321,9 @@ class Places365Model(BaseModel):
         ]
 
         kernels_gen_decoder = [
-            (512, 2, 0.2),  # [batch, 2, 2, 512] => [batch, 4, 4, 512]
-            (512, 2, 0.2),  # [batch, 4, 4, 512] => [batch, 8, 8, 512]
-            (512, 2, 0.2),  # [batch, 8, 8, 512] => [batch, 16, 16, 512]
+            (512, 2, 0.5),  # [batch, 2, 2, 512] => [batch, 4, 4, 512]
+            (512, 2, 0.5),  # [batch, 4, 4, 512] => [batch, 8, 8, 512]
+            (512, 2, 0.5),  # [batch, 8, 8, 512] => [batch, 16, 16, 512]
             (256, 2, 0),    # [batch, 16, 16, 512] => [batch, 32, 32, 256]
             (128, 2, 0),    # [batch, 32, 32, 256] => [batch, 64, 64, 128]
             (64, 2, 0),     # [batch, 64, 64, 128] => [batch, 128, 128, 64]
@@ -327,7 +339,8 @@ class Places365Model(BaseModel):
             (256, 2, 0),    # [batch, 64, 64, 128] => [batch, 32, 32, 256]
             (512, 2, 0),    # [batch, 32, 32, 256] => [batch, 16, 16, 512]
             (512, 2, 0),    # [batch, 16, 16, 512] => [batch, 8, 8, 512]
-            (512, 2, 0)     # [batch, 8, 8, 512] => [batch, 4, 4, 512]
+            (512, 2, 0),    # [batch, 8, 8, 512] => [batch, 4, 4, 512]
+            (512, 1, 0),    # [batch, 4, 4, 512] => [batch, 4, 4, 512]
         ]
 
         return Discriminator('dis', kernels_dis)

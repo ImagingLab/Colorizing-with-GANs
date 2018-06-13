@@ -9,7 +9,7 @@ class Discriminator(object):
         self.kernels = kernels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None, kernel_size=None, seed=None):
+    def create(self, inputs, kernel_size=None, seed=None, reuse_variables=None):
         output = inputs
         with tf.variable_scope(self.name, reuse=reuse_variables):
             for index, kernel in enumerate(self.kernels):
@@ -54,7 +54,7 @@ class Generator(object):
         self.output_channels = output_channels
         self.var_list = []
 
-    def create(self, inputs, reuse_variables=None, kernel_size=None, seed=None):
+    def create(self, inputs, kernel_size=None, seed=None, reuse_variables=None):
         output = inputs
 
         with tf.variable_scope(self.name, reuse=reuse_variables):

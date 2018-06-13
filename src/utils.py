@@ -98,13 +98,13 @@ def visualize(train_log_file, test_log_file, window_width, title=''):
     plt.subplot('121')
     plt.cla()
     if len(train_data) > 1:
-        plt.plot(moving_average(train_data[:, 6], window_width))
+        plt.plot(moving_average(train_data[:, 8], window_width))
     plt.title('train')
 
     plt.subplot('122')
     plt.cla()
     if len(test_data) > 1:
-        plt.plot(test_data[:, 6])
+        plt.plot(test_data[:, 8])
     plt.title('test')
 
     plt.show()
