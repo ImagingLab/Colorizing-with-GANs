@@ -46,14 +46,18 @@ class BaseModel:
 
             generator = self.dataset_train.generator(self.options.batch_size)
             progbar = keras.utils.Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
+            step = 0
 
             for input_rgb in generator:
-                self.iteration += 1
                 feed_dic = {self.input_rgb: input_rgb}
+
+                self.iteration = self.iteration + 1
+                self.global_step = self.global_step + 1
 
                 self.sess.run([self.dis_train], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
                 self.sess.run([self.gen_train, self.accuracy], feed_dict=feed_dic)
+                self.sess.run(self.global_step)
 
                 lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
@@ -216,7 +220,7 @@ class BaseModel:
         self.dis_train = tf.train.AdamOptimizer(
             learning_rate=self.learning_rate,
             beta1=self.options.beta1
-        ).minimize(self.dis_loss, var_list=dis_factory.var_list, global_step=self.global_step)
+        ).minimize(self.dis_loss, var_list=dis_factory.var_list)
 
         self.saver = tf.train.Saver()
 
