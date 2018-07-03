@@ -38,7 +38,7 @@ python train.py \
   --batch-size 16 \
   --epochs 10 \
   --lr 3e-4 \
-  --augment True
+  --label-smoothing 1
   
 ```
 
@@ -52,7 +52,7 @@ python train.py \
   --batch-size 128 \
   --epochs 200 \
   --lr 3e-4 \
-  --lr-decay-steps 5e4 \
+  --lr-decay-steps 2e4 \
   --augment True
   
 ```
