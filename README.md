@@ -52,7 +52,7 @@ python train.py \
   --batch-size 128 \
   --epochs 200 \
   --lr 3e-4 \
-  --lr-decay-steps 2e4 \
+  --lr-decay-steps 1e4 \
   --augment True
   
 ```
