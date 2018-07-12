@@ -118,10 +118,12 @@ Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colo
 If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1803.05400">Image Colorization with Generative Adversarial Networks</a>:
 
 ```
-@article{nazeri2018image,
-  title={Image Colorization with Generative Adversarial Networks},
+@inproceedings{nazeri2018image,
+  title={Image Colorization Using Generative Adversarial Networks},
   author={Nazeri, Kamyar and Ng, Eric and Ebrahimi, Mehran},
-  journal={arXiv preprint arXiv:1803.05400},
-  year={2018}
+  booktitle={International Conference on Articulated Motion and Deformable Objects},
+  pages={85--94},
+  year={2018},
+  organization={Springer}
 }
 ```
