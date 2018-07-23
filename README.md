@@ -58,18 +58,20 @@ python train.py \
 ```
 
 ### Evaluate
+- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
 - To evaluate the model quantitatively on the test-set, run `test-eval.py` script:
 ```bash
 python test-eval.py
 ```
 
 ### Turing Test
-- To evaluate the model qualitatively using human perception, run `test-turing.py`:
+- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
+- To evaluate the model qualitatively using visual Turing test, run `test-turing.py`:
 ```bash
 python test-turing.py
 ```
 
-- To apply time-based Turing test run (2 seconds decision time):
+- To apply time-based visual Turing test run (2 seconds decision time):
 ```bash
 python test-turing.py --test-delay 2
 ```
