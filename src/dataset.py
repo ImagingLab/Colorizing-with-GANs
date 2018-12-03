@@ -1,3 +1,4 @@
+import os
 import glob
 import numpy as np
 import tensorflow as tf
@@ -116,10 +117,19 @@ class Places365Dataset(BaseDataset):
 
     def load(self):
         if self.training:
-            data = np.array(
-                glob.glob(self.path + '/data_256/**/*.jpg', recursive=True))
+            flist = os.path.join(self.path, 'train.flist')
+            if os.path.exists(flist):
+                data = np.loadtxt(flist, dtype=np.str)
+            else:
+                data = glob.glob(self.path + '/data_256/**/*.jpg', recursive=True)
+                np.savetxt(flist, data, fmt='%s')
 
         else:
-            data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
+            flist = os.path.join(self.path, 'test.flist')
+            if os.path.exists(flist):
+                data = np.loadtxt(flist, dtype=np.str)
+            else:
+                data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
+                np.savetxt(flist, data, fmt='%s')
 
         return data
