@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 
 import os
@@ -6,13 +5,12 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from tensorflow import keras
 from abc import abstractmethod
 from .networks import Generator, Discriminator
 from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, turing_test, imshow, visualize
+from .utils import stitch_images, turing_test, imshow, visualize, Progbar
 
 
 class BaseModel:
@@ -45,7 +43,7 @@ class BaseModel:
             self.iteration = 0
 
             generator = self.dataset_train.generator(self.options.batch_size)
-            progbar = keras.utils.Progbar(total, stateful_metrics=['epoch', 'iteration', 'step'])
+            progbar = Progbar(total, width=25, stateful_metrics=['epoch', 'iter', 'step'])
 
             for input_rgb in generator:
                 feed_dic = {self.input_rgb: input_rgb}
@@ -59,7 +57,7 @@ class BaseModel:
 
                 progbar.add(len(input_rgb), values=[
                     ("epoch", epoch + 1),
-                    ("iteration", self.iteration),
+                    ("iter", self.iteration),
                     ("step", step),
                     ("D loss", lossD),
                     ("D fake", lossD_fake),
@@ -97,7 +95,7 @@ class BaseModel:
         print('\n\nEvaluating epoch: %d' % self.epoch)
         test_total = len(self.dataset_test)
         test_generator = self.dataset_test.generator(self.options.batch_size)
-        progbar = keras.utils.Progbar(test_total)
+        progbar = Progbar(test_total, width=25)
 
         result = []
 
@@ -171,7 +169,7 @@ class BaseModel:
         gen_factory = self.create_generator()
         dis_factory = self.create_discriminator()
         smoothing = 0.9 if self.options.label_smoothing else 1
-        seed = seed = self.options.seed
+        seed = self.options.seed
         kernel = self.options.kernel_size
 
         self.input_rgb = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_rgb')
@@ -199,8 +197,8 @@ class BaseModel:
         self.learning_rate = tf.constant(self.options.lr)
 
         # learning rate decay
-        if self.options.lr_decay_rate > 0:
-            self.learning_rate = tf.maximum(1e-8, tf.train.exponential_decay(
+        if self.options.lr_decay and self.options.lr_decay_rate > 0:
+            self.learning_rate = tf.maximum(1e-6, tf.train.exponential_decay(
                 learning_rate=self.options.lr,
                 global_step=self.global_step,
                 decay_steps=self.options.lr_decay_steps,
