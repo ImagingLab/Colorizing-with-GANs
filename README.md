@@ -38,7 +38,7 @@ python train.py \
   --batch-size 16 \
   --epochs 10 \
   --lr 3e-4 \
-  --augment True
+  --label-smoothing 1
   
 ```
 
@@ -52,24 +52,26 @@ python train.py \
   --batch-size 128 \
   --epochs 200 \
   --lr 3e-4 \
-  --lr-decay-steps 5e4 \
+  --lr-decay-steps 1e4 \
   --augment True
   
 ```
 
 ### Evaluate
+- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
 - To evaluate the model quantitatively on the test-set, run `test-eval.py` script:
 ```bash
 python test-eval.py
 ```
 
 ### Turing Test
-- To evaluate the model qualitatively using human perception, run `test-turing.py`:
+- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
+- To evaluate the model qualitatively using visual Turing test, run `test-turing.py`:
 ```bash
 python test-turing.py
 ```
 
-- To apply time-based Turing test run (2 seconds decision time):
+- To apply time-based visual Turing test run (2 seconds decision time):
 ```bash
 python test-turing.py --test-delay 2
 ```
@@ -118,10 +120,12 @@ Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colo
 If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1803.05400">Image Colorization with Generative Adversarial Networks</a>:
 
 ```
-@article{nazeri2018image,
-  title={Image Colorization with Generative Adversarial Networks},
+@inproceedings{nazeri2018image,
+  title={Image Colorization Using Generative Adversarial Networks},
   author={Nazeri, Kamyar and Ng, Eric and Ebrahimi, Mehran},
-  journal={arXiv preprint arXiv:1803.05400},
-  year={2018}
+  booktitle={International Conference on Articulated Motion and Deformable Objects},
+  pages={85--94},
+  year={2018},
+  organization={Springer}
 }
 ```
