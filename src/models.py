@@ -97,26 +97,22 @@ class BaseModel:
         test_generator = self.dataset_test.generator(self.options.batch_size)
         progbar = Progbar(test_total, width=25)
 
-        result = []
-
         for input_rgb in test_generator:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
 
-            # returns (D loss, D_fake loss, D_real loss, G loss, G_L1 loss, G_gan loss, accuracy, step)
-            result.append(self.eval_outputs(feed_dic=feed_dic))
+            lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc, step = self.eval_outputs(feed_dic=feed_dic)
 
-            progbar.add(len(input_rgb))
-
-        result = np.mean(np.array(result), axis=0)
-        print('Results: D loss: %f - D fake: %f - D real: %f - G loss: %f - G L1: %f - G gan: %f - accuracy: %f'
-              % (result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
-
-        if self.options.log:
-            with open(self.test_log_file, 'a') as f:
-                # (epoch, step, lossD, lossD_fake, lossD_real, lossG, lossG_l1, lossG_gan, acc)
-                f.write('%d %d %f %f %f %f %f %f %f\n' % (self.epoch, result[7], result[0], result[1], result[2], result[3], result[4], result[5], result[6]))
+            progbar.add(len(input_rgb), values=[
+                ("D loss", lossD),
+                ("D fake", lossD_fake),
+                ("D real", lossD_real),
+                ("G loss", lossG),
+                ("G L1", lossG_l1),
+                ("G gan", lossG_gan),
+                ("accuracy", acc)
+            ])
 
         print('\n')
 
@@ -300,7 +296,6 @@ class Cifar10Model(BaseModel):
             path=self.options.dataset_path,
             training=training,
             augment=self.options.augment)
-
 
 class Places365Model(BaseModel):
     def __init__(self, sess, options):

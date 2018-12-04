@@ -57,8 +57,8 @@ def main(options):
 
         elif options.mode == 1:
             model.evaluate()
-            while True:
-                model.sample()
+            #while True:
+                #model.sample()
 
         else:
             model.turing_test()
