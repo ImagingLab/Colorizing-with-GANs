@@ -4,9 +4,10 @@ from .ops import conv2d, conv2d_transpose, pixelwise_accuracy
 
 
 class Discriminator(object):
-    def __init__(self, name, kernels):
+    def __init__(self, name, kernels, training=True):
         self.name = name
         self.kernels = kernels
+        self.training = training
         self.var_list = []
 
     def create(self, inputs, kernel_size=None, seed=None, reuse_variables=None):
@@ -29,7 +30,8 @@ class Discriminator(object):
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
+                    keep_prob = 1.0 - kernel[2] if self.training else 1.0
+                    output = tf.nn.dropout(output, keep_prob=keep_prob, name='dropout_' + name, seed=seed)
 
             output = conv2d(
                 inputs=output,
@@ -47,11 +49,12 @@ class Discriminator(object):
 
 
 class Generator(object):
-    def __init__(self, name, encoder_kernels, decoder_kernels, output_channels=3):
+    def __init__(self, name, encoder_kernels, decoder_kernels, output_channels=3, training=True):
         self.name = name
         self.encoder_kernels = encoder_kernels
         self.decoder_kernels = decoder_kernels
         self.output_channels = output_channels
+        self.training = training
         self.var_list = []
 
     def create(self, inputs, kernel_size=None, seed=None, reuse_variables=None):
@@ -77,9 +80,10 @@ class Generator(object):
 
                 # save contracting path layers to be used for skip connections
                 layers.append(output)
-
+                
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
+                    keep_prob = 1.0 - kernel[2] if self.training else 1.0
+                    output = tf.nn.dropout(output, keep_prob=keep_prob, name='dropout_' + name, seed=seed)
 
             # decoder branch
             for index, kernel in enumerate(self.decoder_kernels):
@@ -96,7 +100,8 @@ class Generator(object):
                 )
 
                 if kernel[2] > 0:
-                    output = tf.nn.dropout(output, keep_prob=1 - kernel[2], name='dropout_' + name, seed=seed)
+                    keep_prob = 1.0 - kernel[2] if self.training else 1.0
+                    output = tf.nn.dropout(output, keep_prob=keep_prob, name='dropout_' + name, seed=seed)
 
                 # concat the layer from the contracting path with the output of the current layer
                 # concat only the channels (axis=3)

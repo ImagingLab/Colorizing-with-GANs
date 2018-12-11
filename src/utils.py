@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import random
@@ -30,6 +31,13 @@ def stitch_images(grayscale, original, pred):
     return img
 
 
+def create_dir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+    return dir
+
+
 def unpickle(file):
     with open(file, 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')
@@ -48,6 +56,11 @@ def imshow(img, title=''):
     plt.axis('off')
     plt.imshow(img, interpolation='none')
     plt.show()
+
+
+def imsave(img, path):
+    im = Image.fromarray(np.array(img).astype(np.uint8).squeeze())
+    im.save(path)
 
 
 def turing_test(real_img, fake_img, delay=0):

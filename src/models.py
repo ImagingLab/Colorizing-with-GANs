@@ -7,10 +7,10 @@ import tensorflow as tf
 
 from abc import abstractmethod
 from .networks import Generator, Discriminator
-from .dataset import Places365Dataset, Cifar10Dataset
 from .ops import pixelwise_accuracy, preprocess, postprocess
 from .ops import COLORSPACE_RGB, COLORSPACE_LAB
-from .utils import stitch_images, turing_test, imshow, visualize, Progbar
+from .dataset import Places365Dataset, Cifar10Dataset, TestDataset
+from .utils import stitch_images, turing_test, imshow, imsave, create_dir, visualize, Progbar
 
 
 class BaseModel:
@@ -23,15 +23,13 @@ class BaseModel:
         self.train_log_file = os.path.join(options.checkpoints_path, 'log_train.dat')
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.dataset_train = self.create_dataset(True)
-        self.dataset_test = self.create_dataset(False)
-        self.sample_generator = self.dataset_test.generator(options.sample_size, True)
+        self.dataset_val = self.create_dataset(False)
+        self.sample_generator = self.dataset_val.generator(options.sample_size, True)
         self.iteration = 0
         self.epoch = 0
         self.is_built = False
 
     def train(self):
-        self.build()
-
         total = len(self.dataset_train)
 
         for epoch in range(self.options.epochs):
@@ -80,24 +78,24 @@ class BaseModel:
                 if self.options.sample and step % self.options.sample_interval == 0:
                     self.sample(show=False)
 
-                # evaluate model at checkpoints
+                # validate model at checkpoints
                 if self.options.validate and self.options.validate_interval > 0 and step % self.options.validate_interval == 0:
-                    self.evaluate()
+                    self.validate()
 
                 # save model at checkpoints
                 if self.options.save and step % self.options.save_interval == 0:
                     self.save()
 
             if self.options.validate:
-                self.evaluate()
+                self.validate()
 
-    def evaluate(self):
-        print('\n\nEvaluating epoch: %d' % self.epoch)
-        test_total = len(self.dataset_test)
-        test_generator = self.dataset_test.generator(self.options.batch_size)
-        progbar = Progbar(test_total, width=25)
+    def validate(self):
+        print('\n\nValidating epoch: %d' % self.epoch)
+        total = len(self.dataset_val)
+        val_generator = self.dataset_val.generator(self.options.batch_size)
+        progbar = Progbar(total, width=25)
 
-        for input_rgb in test_generator:
+        for input_rgb in val_generator:
             feed_dic = {self.input_rgb: input_rgb}
 
             self.sess.run([self.dis_loss, self.gen_loss, self.accuracy], feed_dict=feed_dic)
@@ -116,9 +114,23 @@ class BaseModel:
 
         print('\n')
 
-    def sample(self, show=True):
-        self.build()
+    def test(self):
+        print('\nTesting...')
+        dataset = TestDataset(self.options.test_input or (self.options.checkpoints_path + '/test'))
+        outputs_path = create_dir(self.options.test_output or (self.options.checkpoints_path + '/output'))
 
+        for index in range(len(dataset)):
+            img_gray_path, img_gray = dataset[index]
+            name = os.path.basename(img_gray_path)
+            path = os.path.join(outputs_path, name)
+
+            feed_dic = {self.input_gray: img_gray[None, :, :, None]}
+            outputs = self.sess.run(self.sampler, feed_dict=feed_dic)
+            outputs = postprocess(tf.convert_to_tensor(outputs), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB).eval() * 255
+            print(path)
+            imsave(outputs[0], path)
+
+    def sample(self, show=True):
         input_rgb = next(self.sample_generator)
         feed_dic = {self.input_rgb: input_rgb}
 
@@ -127,9 +139,7 @@ class BaseModel:
         fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
         img = stitch_images(input_gray, input_rgb, fake_image.eval())
 
-        if not os.path.exists(self.samples_dir):
-            os.makedirs(self.samples_dir)
-
+        create_dir(self.samples_dir)
         sample = self.options.dataset + "_" + str(step).zfill(5) + ".png"
 
         if show:
@@ -140,18 +150,19 @@ class BaseModel:
 
     def turing_test(self):
         batch_size = self.options.batch_size
-        gen = self.dataset_test.generator(batch_size, True)
+        gen = self.dataset_val.generator(batch_size, True)
         count = 0
         score = 0
+        size = self.options.turing_test_size
 
-        while count < self.options.test_size:
+        while count < size:
             input_rgb = next(gen)
             feed_dic = {self.input_rgb: input_rgb}
             fake_image = self.sess.run(self.sampler, feed_dict=feed_dic)
             fake_image = postprocess(tf.convert_to_tensor(fake_image), colorspace_in=self.options.color_space, colorspace_out=COLORSPACE_RGB)
 
-            for i in range(np.min([batch_size, self.options.test_size - count])):
-                res = turing_test(input_rgb[i], fake_image.eval()[i], self.options.test_delay)
+            for i in range(np.min([batch_size, size - count])):
+                res = turing_test(input_rgb[i], fake_image.eval()[i], self.options.turing_test_delay)
                 count += 1
                 score += res
                 print('success: %d - fail: %d - rate: %f' % (score, count - score, (count - score) / count))
@@ -166,11 +177,21 @@ class BaseModel:
         dis_factory = self.create_discriminator()
         smoothing = 0.9 if self.options.label_smoothing else 1
         seed = self.options.seed
-        kernel = self.options.kernel_size
+        kernel = 4
 
+        # model input placeholder: RGB imaege
         self.input_rgb = tf.placeholder(tf.float32, shape=(None, None, None, 3), name='input_rgb')
-        self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
+
+        # model input after preprocessing: LAB image
         self.input_color = preprocess(self.input_rgb, colorspace_in=COLORSPACE_RGB, colorspace_out=self.options.color_space)
+
+        # test mode: model input is a graycale placeholder
+        if self.options.mode == 1:
+            self.input_gray = tf.placeholder(tf.float32, shape=(None, None, None, 1), name='input_gray')
+
+        # train/turing-test we extract grayscale image from color image
+        else:
+            self.input_gray = tf.image.rgb_to_grayscale(self.input_rgb)
 
         gen = gen_factory.create(self.input_gray, kernel, seed)
         dis_real = dis_factory.create(tf.concat([self.input_gray, self.input_color], 3), kernel, seed)
@@ -208,7 +229,7 @@ class BaseModel:
 
         # discriminator optimizaer
         self.dis_train = tf.train.AdamOptimizer(
-            learning_rate=self.learning_rate,
+            learning_rate=self.learning_rate / 10,
             beta1=self.options.beta1
         ).minimize(self.dis_loss, var_list=dis_factory.var_list, global_step=self.global_step)
 
@@ -279,7 +300,7 @@ class Cifar10Model(BaseModel):
             (64, 2, 0),     # [batch, 16, 16, 128] => [batch, 32, 32, 64]
         ]
 
-        return Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
+        return Generator('gen', kernels_gen_encoder, kernels_gen_decoder, training=self.options.training)
 
     def create_discriminator(self):
         kernels_dis = [
@@ -289,13 +310,14 @@ class Cifar10Model(BaseModel):
             (512, 1, 0),    # [batch, 4, 4, 256] => [batch, 4, 4, 512]
         ]
 
-        return Discriminator('dis', kernels_dis)
+        return Discriminator('dis', kernels_dis, training=self.options.training)
 
     def create_dataset(self, training=True):
         return Cifar10Dataset(
             path=self.options.dataset_path,
             training=training,
             augment=self.options.augment)
+
 
 class Places365Model(BaseModel):
     def __init__(self, sess, options):
@@ -314,29 +336,26 @@ class Places365Model(BaseModel):
         ]
 
         kernels_gen_decoder = [
-            (512, 2, 0.5),  # [batch, 2, 2, 512] => [batch, 4, 4, 512]
-            (512, 2, 0.5),  # [batch, 4, 4, 512] => [batch, 8, 8, 512]
-            (512, 2, 0.5),  # [batch, 8, 8, 512] => [batch, 16, 16, 512]
+            (512, 2, 0),    # [batch, 2, 2, 512] => [batch, 4, 4, 512]
+            (512, 2, 0),    # [batch, 4, 4, 512] => [batch, 8, 8, 512]
+            (512, 2, 0),    # [batch, 8, 8, 512] => [batch, 16, 16, 512]
             (256, 2, 0),    # [batch, 16, 16, 512] => [batch, 32, 32, 256]
             (128, 2, 0),    # [batch, 32, 32, 256] => [batch, 64, 64, 128]
             (64, 2, 0),     # [batch, 64, 64, 128] => [batch, 128, 128, 64]
             (64, 2, 0)      # [batch, 128, 128, 64] => [batch, 256, 256, 64]
         ]
 
-        return Generator('gen', kernels_gen_encoder, kernels_gen_decoder)
+        return Generator('gen', kernels_gen_encoder, kernels_gen_decoder, training=self.options.training)
 
     def create_discriminator(self):
         kernels_dis = [
             (64, 2, 0),     # [batch, 256, 256, ch] => [batch, 128, 128, 64]
             (128, 2, 0),    # [batch, 128, 128, 64] => [batch, 64, 64, 128]
             (256, 2, 0),    # [batch, 64, 64, 128] => [batch, 32, 32, 256]
-            (512, 2, 0),    # [batch, 32, 32, 256] => [batch, 16, 16, 512]
-            (512, 2, 0),    # [batch, 16, 16, 512] => [batch, 8, 8, 512]
-            (512, 2, 0),    # [batch, 8, 8, 512] => [batch, 4, 4, 512]
-            (512, 1, 0),    # [batch, 4, 4, 512] => [batch, 4, 4, 512]
+            (512, 1, 0),    # [batch, 32, 32, 256] => [batch, 32, 32, 512]
         ]
 
-        return Discriminator('dis', kernels_dis)
+        return Discriminator('dis', kernels_dis, training=self.options.training)
 
     def create_dataset(self, training=True):
         return Places365Dataset(

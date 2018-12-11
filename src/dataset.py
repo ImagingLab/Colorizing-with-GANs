@@ -60,14 +60,13 @@ class BaseDataset():
                         items.append(item)
 
                 start = end
-                yield np.array(items)
+                yield items
 
             if recusrive:
                 start = 0
 
             else:
                 raise StopIteration
-
 
     @property
     def data(self):
@@ -131,5 +130,25 @@ class Places365Dataset(BaseDataset):
             else:
                 data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
                 np.savetxt(flist, data, fmt='%s')
+
+        return data
+
+
+class TestDataset(BaseDataset):
+    def __init__(self, path):
+        super(TestDataset, self).__init__('TEST', path, training=False, augment=False)
+
+    def __getitem__(self, index):
+        path = self.data[index]
+        img = imread(path)
+        return path, img
+
+    def load(self):
+
+        if os.path.isfile(self.path):
+            data = [self.path]
+
+        elif os.path.isdir(self.path):
+            data = list(glob.glob(self.path + '/*.jpg')) + list(glob.glob(self.path + '/*.png'))
 
         return data

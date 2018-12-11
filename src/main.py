@@ -54,11 +54,9 @@ def main(options):
             print('-------------- End ----------------\n')
             
             model.train()
-
+        
         elif options.mode == 1:
-            model.evaluate()
-            #while True:
-                #model.sample()
+            model.test()
 
         else:
             model.turing_test()
