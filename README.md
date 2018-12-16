@@ -57,14 +57,17 @@ python train.py \
   
 ```
 
-### Evaluate
+### Test
 - Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
-- To evaluate the model quantitatively on the test-set, run `test-eval.py` script:
+- To test the model on a custom image(s), run `test.py` script:
 ```bash
-python test-eval.py
+python test.py \
+  --checkpoints-path ./checkpoints \        # checkpoints path
+  --test-input ./checkpoints/test \         # test image(s) path
+  --test-output ./checkpoints/output \      # output image(s) path
 ```
 
-### Turing Test
+### Visual Turing Test
 - Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
 - To evaluate the model qualitatively using visual Turing test, run `test-turing.py`:
 ```bash
@@ -106,9 +109,6 @@ The architecture of generator is inspired by  [U-Net](https://arxiv.org/abs/1505
 </p>
 
 For discriminator, we use similar architecture as the baselines contractive path: a series of 4x4 convolutional layers with stride 2 with the number of channels being doubled after each downsampling. All convolution layers are followed by batch normalization, leaky ReLU activation with slope 0.2. After the last layer, a convolution is applied to map to a 1 dimensional output, followed by a sigmoid function to return a probability value of the input being real or fake
-<p align='center'>  
-  <img src='img/discriminator.png' width='450px' height='168px' />
-</p>
   
 ## Places365 Results
 Colorization results with Places365. (a) Grayscale. (b) Original Image. (c) Colorized with GAN.
