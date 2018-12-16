@@ -118,7 +118,7 @@ class Places365Dataset(BaseDataset):
         if self.training:
             flist = os.path.join(self.path, 'train.flist')
             if os.path.exists(flist):
-                data = np.loadtxt(flist, dtype=np.str)
+                data = np.genfromtxt(flist, dtype=np.str, encoding='utf-8')
             else:
                 data = glob.glob(self.path + '/data_256/**/*.jpg', recursive=True)
                 np.savetxt(flist, data, fmt='%s')
@@ -126,7 +126,7 @@ class Places365Dataset(BaseDataset):
         else:
             flist = os.path.join(self.path, 'test.flist')
             if os.path.exists(flist):
-                data = np.loadtxt(flist, dtype=np.str)
+                data = np.genfromtxt(flist, dtype=np.str, encoding='utf-8')
             else:
                 data = np.array(glob.glob(self.path + '/val_256/*.jpg'))
                 np.savetxt(flist, data, fmt='%s')
