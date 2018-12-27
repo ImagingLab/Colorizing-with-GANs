@@ -38,8 +38,8 @@ class BaseDataset():
             img = imread(val) if isinstance(val, str) else val
 
             # grayscale images
-            # if np.unique(img, axis=2).shape[2] == 1:
-            #     return None
+            if np.sum(img[:,:,0] - img[:,:,1]) == 0 and np.sum(img[:,:,0] - img[:,:,2]) == 0:
+                return None
 
             if self.augment and np.random.binomial(1, 0.5) == 1:
                 img = img[:, ::-1, :]
