@@ -58,7 +58,7 @@ python train.py \
 ```
 
 ### Test
-- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder.
+- Download the pre-trained weights [from here.](https://drive.google.com/open?id=1jTsAUAKrMiHO2gn7s-fFZ_zUSzgKoPyp) and copy them in the `checkpoints` folder. (For example if you downlaod the places365 models, the models should be in this folder: `./checkpoints/places365`)
 - To test the model on a custom image(s), run `test.py` script:
 ```bash
 python test.py \
